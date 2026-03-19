@@ -18,4 +18,7 @@ public interface MonitorPointMapper extends BaseMapper<MonitorPoint> {
 
     @Select("SELECT COUNT(*) > 0 FROM monitor_point WHERE point_id = #{pointId}")
     boolean existsByPointId(String pointId);
+
+    @Select("SELECT * FROM monitor_point WHERE field_id = #{fieldId} AND status = 1")
+    List<MonitorPoint> findByFieldId(Long fieldId);
 }

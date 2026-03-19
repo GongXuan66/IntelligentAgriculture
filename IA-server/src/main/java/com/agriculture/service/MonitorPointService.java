@@ -1,7 +1,9 @@
 package com.agriculture.service;
 
 import com.agriculture.model.dto.MonitorPointDTO;
+import com.agriculture.entity.Field;
 import com.agriculture.entity.MonitorPoint;
+import com.agriculture.mapper.FieldMapper;
 import com.agriculture.mapper.MonitorPointMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -15,6 +17,7 @@ import java.util.stream.Collectors;
 public class MonitorPointService {
 
     private final MonitorPointMapper monitorPointMapper;
+    private final FieldMapper fieldMapper;
 
     public List<MonitorPointDTO> getAllPoints() {
         return monitorPointMapper.selectList(null).stream()
@@ -24,6 +27,12 @@ public class MonitorPointService {
 
     public List<MonitorPointDTO> getActivePoints() {
         return monitorPointMapper.findByStatus(1).stream()
+                .map(this::toDTO)
+                .collect(Collectors.toList());
+    }
+
+    public List<MonitorPointDTO> getPointsByFieldId(Long fieldId) {
+        return monitorPointMapper.findByFieldId(fieldId).stream()
                 .map(this::toDTO)
                 .collect(Collectors.toList());
     }
@@ -45,6 +54,7 @@ public class MonitorPointService {
         }
 
         MonitorPoint point = new MonitorPoint();
+        point.setFieldId(request.getFieldId());
         point.setPointId(request.getPointId());
         point.setPointName(request.getPointName());
         point.setLocation(request.getLocation());
@@ -62,6 +72,9 @@ public class MonitorPointService {
             throw new RuntimeException("检测点不存在: " + id);
         }
 
+        if (request.getFieldId() != null) {
+            point.setFieldId(request.getFieldId());
+        }
         if (request.getPointName() != null) {
             point.setPointName(request.getPointName());
         }
@@ -87,6 +100,7 @@ public class MonitorPointService {
     private MonitorPointDTO toDTO(MonitorPoint point) {
         MonitorPointDTO dto = new MonitorPointDTO();
         dto.setId(point.getId());
+        dto.setFieldId(point.getFieldId());
         dto.setPointId(point.getPointId());
         dto.setPointName(point.getPointName());
         dto.setLocation(point.getLocation());
@@ -94,6 +108,15 @@ public class MonitorPointService {
         dto.setStatus(point.getStatus());
         dto.setCreatedAt(point.getCreatedAt());
         dto.setUpdatedAt(point.getUpdatedAt());
+        
+        // 获取关联的地块名称
+        if (point.getFieldId() != null) {
+            Field field = fieldMapper.selectById(point.getFieldId());
+            if (field != null) {
+                dto.setFieldName(field.getFieldName());
+            }
+        }
+        
         return dto;
     }
 }

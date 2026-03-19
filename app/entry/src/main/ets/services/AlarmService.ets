@@ -108,9 +108,13 @@ export class AlarmService {
     return await this.getAlarmList(undefined, 0)
   }
 
-  async getUnprocessedCount(): Promise<number> {
+  async getUnprocessedCount(pointId?: number): Promise<number> {
     try {
-      let result = await HttpClient.get<ApiResponse<number>>('/api/alarm/unprocessed/count')
+      let url = '/api/alarm/unprocessed/count'
+      if (pointId !== undefined) {
+        url += `?pointId=${pointId}`
+      }
+      let result = await HttpClient.get<ApiResponse<number>>(url)
       return result.data
     } catch (error) {
       console.error('[AlarmService] get unprocessed count failed:', error)

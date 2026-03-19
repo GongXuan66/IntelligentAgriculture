@@ -28,6 +28,9 @@ public interface AlarmMapper extends BaseMapper<Alarm> {
     @Select("SELECT COUNT(*) FROM alarm WHERE status = 0")
     Long countUnprocessed();
 
+    @Select("SELECT COUNT(*) FROM alarm WHERE point_id = #{pointId} AND status = 0")
+    Long countUnprocessedByPointId(Long pointId);
+
     @Select("SELECT * FROM alarm WHERE created_at BETWEEN #{startTime} AND #{endTime} ORDER BY created_at DESC")
     List<Alarm> findByTimeRange(
             @Param("startTime") LocalDateTime startTime,

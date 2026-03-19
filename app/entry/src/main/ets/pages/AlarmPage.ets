@@ -2,6 +2,8 @@ import { AlarmRecord, AlarmType } from '../models/Alarm'
 import { AlarmService } from '../services/AlarmService'
 import { AlarmCard } from '../components/AlarmCard'
 import { NavBottom } from '../components/NavBottom'
+import { AppState } from '../config/AppState'
+import router from '@ohos.router'
 
 /**
  * 报警页面
@@ -12,11 +14,20 @@ struct AlarmPage {
   @State alarmRecords: AlarmRecord[] = []
   @State unreadCount: number = 0
   @State isLoading: boolean = true
+  @State currentPointName: string = ''
 
   private alarmService: AlarmService = AlarmService.getInstance()
+  private appState: AppState = AppState.getInstance()
   private refreshInterval: number = -1
 
   aboutToAppear() {
+    // 检查是否有选中的检测点
+    if (!this.appState.currentPoint) {
+      router.replaceUrl({ url: 'pages/FieldListPage' })
+      return
+    }
+    
+    this.currentPointName = this.appState.currentPoint.pointName
     this.loadAlarms()
     this.refreshInterval = setInterval(() => {
       this.loadAlarms()
@@ -32,8 +43,9 @@ struct AlarmPage {
   async loadAlarms() {
     this.isLoading = true
     try {
-      this.alarmRecords = await this.alarmService.getAlarmList()
-      this.unreadCount = await this.alarmService.getUnprocessedCount()
+      const pointId = this.appState.currentPoint?.id
+      this.alarmRecords = await this.alarmService.getAlarmList(pointId)
+      this.unreadCount = await this.alarmService.getUnprocessedCount(pointId)
     } catch (error) {
       console.error('加载报警记录失败:', error)
     } finally {
@@ -49,7 +61,9 @@ struct AlarmPage {
   }
 
   async clearAllAlarms() {
-    let success = await this.alarmService.handleAllByPointId(1)
+    const pointId = this.appState.currentPoint?.id
+    if (!pointId) return
+    let success = await this.alarmService.handleAllByPointId(pointId)
     if (success) {
       await this.loadAlarms()
     }
@@ -58,26 +72,52 @@ struct AlarmPage {
   build() {
     Column() {
       // 标题栏
-      Row() {
-        Text('报警记录')
-          .fontSize(20)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#333333')
+      Column() {
+        Row() {
+          // 返回按钮
+          Row() {
+            Text('←')
+              .fontSize(20)
+              .fontColor('#333333')
+          }
+          .width(36)
+          .height(36)
+          .justifyContent(FlexAlign.Center)
+          .backgroundColor('#f5f5f5')
+          .borderRadius(18)
+          .onClick(() => {
+            router.back()
+          })
 
-        Blank()
+          Text('报警记录')
+            .fontSize(20)
+            .fontWeight(FontWeight.Bold)
+            .fontColor('#333333')
+            .margin({ left: 12 })
 
-        if (this.unreadCount > 0) {
-          Text(this.unreadCount + ' 条未处理')
+          Blank()
+
+          if (this.unreadCount > 0) {
+            Text(this.unreadCount + ' 条未处理')
+              .fontSize(12)
+              .fontColor('#F44336')
+              .padding({ left: 8, right: 8, top: 4, bottom: 4 })
+              .backgroundColor('#FFEBEE')
+              .borderRadius(10)
+          }
+        }
+        .width('100%')
+
+        // 当前检测点
+        if (this.currentPointName) {
+          Text(`📍 ${this.currentPointName}`)
             .fontSize(12)
-            .fontColor('#F44336')
-            .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-            .backgroundColor('#FFEBEE')
-            .borderRadius(10)
+            .fontColor('#999999')
+            .margin({ top: 4 })
         }
       }
       .width('100%')
-      .height(56)
-      .padding({ left: 16, right: 16 })
+      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
       .backgroundColor(Color.White)
 
       if (this.isLoading) {
@@ -171,8 +211,6 @@ struct AlarmPage {
           .borderRadius(22)
           .onClick(() => this.clearAllAlarms())
       }
-
-      NavBottom({ currentIndex: 5 })
     }
     .width('100%')
     .height('100%')

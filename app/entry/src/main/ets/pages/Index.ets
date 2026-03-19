@@ -1,16 +1,19 @@
 import router from '@ohos.router'
 import { EnvironmentData } from '../models/EnvironmentData'
+import { Field, MonitorPoint } from '../models/Field'
 import { SensorService } from '../services/SensorService'
 import { AlarmService } from '../services/AlarmService'
 import { IrrigationService } from '../services/IrrigationService'
 import { DeviceService } from '../services/DeviceService'
+import { FieldService } from '../services/FieldService'
+import { AppState } from '../config/AppState'
 import { DeviceStatus } from '../models/Device'
 import { AppConfig } from '../config/AppConfig'
 import { DataCard } from '../components/DataCard'
-import { NavBottom } from '../components/NavBottom'
 
 /**
- * 首页 - 环境监测
+ * 地块详情页 - 环境监测
+ * 从地块总览页面跳转进入
  */
 @Entry
 @Component
@@ -23,20 +26,65 @@ struct Index {
   @State onlineCount: number = 0
   @State workingCount: number = 0
   
+  // 当前地块和检测点
+  @State currentField: Field | null = null
+  @State currentPoint: MonitorPoint | null = null
+  @State points: MonitorPoint[] = []
+  @State showPointPicker: boolean = false
+  
+  // 路由参数
+  private fieldId: number = 0
+  private fieldName: string = ''
+  
   private sensorService: SensorService = new SensorService()
   private alarmService: AlarmService = AlarmService.getInstance()
   private irrigationService: IrrigationService = new IrrigationService()
   private deviceService: DeviceService = new DeviceService()
+  private fieldService: FieldService = new FieldService()
+  private appState: AppState = AppState.getInstance()
   private appConfig: AppConfig = AppConfig.getInstance()
   private refreshInterval: number = -1
 
   async aboutToAppear() {
+    // 获取路由参数
+    const params = router.getParams() as Record<string, Object>
+    if (params) {
+      this.fieldId = params['fieldId'] as number || 0
+      this.fieldName = params['fieldName'] as string || ''
+    }
+    
+    // 如果没有参数，尝试从全局状态获取
+    if (!this.fieldId && this.appState.currentField) {
+      this.currentField = this.appState.currentField
+      this.fieldId = this.currentField.id!
+    }
+    
     await this.loadLocalConfig()
     this.isSimulationMode = this.appConfig.simulationMode
+    await this.loadFieldData()
     this.loadData()
     this.refreshInterval = setInterval(() => {
       this.loadData()
     }, 5000)
+  }
+  
+  /**
+   * 加载地块数据
+   */
+  async loadFieldData() {
+    if (this.fieldId) {
+      // 从后端获取地块详情
+      const detail = await this.fieldService.getFieldDetail(this.fieldId)
+      if (detail) {
+        this.currentField = detail.field
+        this.points = detail.points || []
+        
+        if (this.points.length > 0) {
+          this.currentPoint = this.points[0]
+          this.appState.setCurrentPoint(this.points[0])
+        }
+      }
+    }
   }
 
   private async loadLocalConfig(): Promise<void> {
@@ -75,7 +123,8 @@ struct Index {
 
   async loadEnvironmentData() {
     try {
-      this.envData = await this.sensorService.getEnvironmentData()
+      const pointId = this.currentPoint?.id || this.appState.currentPointId
+      this.envData = await this.sensorService.getEnvironmentData(pointId)
       
       if (this.isSimulationMode) {
         this.lastUpdate = '模拟'
@@ -115,9 +164,6 @@ struct Index {
       } else {
         this.ContentSection()
       }
-
-      // 底部导航
-      NavBottom({ currentIndex: 0 })
     }
     .width('100%')
     .height('100%')
@@ -126,34 +172,111 @@ struct Index {
 
   @Builder
   TitleSection() {
-    Row() {
-      Text('智慧农业')
-        .fontSize(22)
-        .fontWeight(FontWeight.Bold)
-        .fontColor(Color.White)
-      
-      Blank()
-
+    Column() {
+      // 顶部标题行
       Row() {
-        Text(this.isSimulationMode ? '模拟' : '在线')
+        // 返回按钮
+        Row() {
+          Text('←')
+            .fontSize(20)
+            .fontColor(Color.White)
+        }
+        .width(36)
+        .height(36)
+        .justifyContent(FlexAlign.Center)
+        .backgroundColor('rgba(255,255,255,0.2)')
+        .borderRadius(18)
+        .onClick(() => {
+          router.back()
+        })
+        
+        // 地块名称
+        Column() {
+          Text(this.currentField?.fieldName || this.fieldName || '地块详情')
+            .fontSize(18)
+            .fontWeight(FontWeight.Bold)
+            .fontColor(Color.White)
+          
+          if (this.currentField?.cropType) {
+            Text(`🌾 ${this.currentField.cropType}`)
+              .fontSize(12)
+              .fontColor('rgba(255,255,255,0.8)')
+              .margin({ top: 2 })
+          }
+        }
+        .alignItems(HorizontalAlign.Start)
+        .margin({ left: 12 })
+        .layoutWeight(1)
+        
+        Blank()
+
+        Row() {
+          Text(this.isSimulationMode ? '模拟' : '在线')
+            .fontSize(12)
+            .fontColor(this.isSimulationMode ? '#FF9800' : '#FFFFFF')
+        }
+        .padding({ left: 8, right: 8, top: 4, bottom: 4 })
+        .backgroundColor(this.isSimulationMode ? 'rgba(255,152,0,0.3)' : 'rgba(255,255,255,0.2)')
+        .borderRadius(4)
+        .margin({ right: 8 })
+        
+        Text(this.lastUpdate)
           .fontSize(12)
-          .fontColor(this.isSimulationMode ? '#FF9800' : '#FFFFFF')
+          .fontColor('rgba(255,255,255,0.8)')
       }
-      .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-      .backgroundColor(this.isSimulationMode ? 'rgba(255,152,0,0.3)' : 'rgba(255,255,255,0.2)')
-      .borderRadius(4)
-      .margin({ right: 8 })
+      .width('100%')
       
-      Text(this.lastUpdate)
-        .fontSize(12)
-        .fontColor('rgba(255,255,255,0.8)')
+      // 检测点选择器
+      if (this.points.length > 1) {
+        this.PointSelectorRow()
+      }
     }
     .width('100%')
-    .padding({ left: 20, right: 20, top: 16, bottom: 16 })
+    .padding({ left: 16, right: 16, top: 12, bottom: 12 })
     .linearGradient({
       angle: 135,
       colors: [['#4CAF50', 0], ['#2E7D32', 1]]
     })
+  }
+  
+  @Builder
+  PointSelectorRow() {
+    Row() {
+      Text('📍')
+        .fontSize(14)
+      Text(this.currentPoint?.pointName || '选择区域')
+        .fontSize(14)
+        .fontColor(Color.White)
+        .margin({ left: 6 })
+      Text('▼')
+        .fontSize(10)
+        .fontColor('rgba(255,255,255,0.7)')
+        .margin({ left: 4 })
+    }
+    .padding({ left: 12, right: 12, top: 6, bottom: 6 })
+    .backgroundColor('rgba(255,255,255,0.2)')
+    .borderRadius(16)
+    .margin({ top: 10 })
+    .onClick(() => {
+      this.showPointPicker = true
+    })
+    .bindMenu(this.showPointPicker, this.PointMenu())
+  }
+  
+  @Builder
+  PointMenu() {
+    Menu() {
+      ForEach(this.points, (point: MonitorPoint) => {
+        MenuItem({ content: point.pointName })
+          .selected(this.currentPoint?.id === point.id)
+          .onClick(() => {
+            this.currentPoint = point
+            this.appState.setCurrentPoint(point)
+            this.showPointPicker = false
+            this.loadData()
+          })
+      })
+    }
   }
 
   @Builder
@@ -278,6 +401,9 @@ struct Index {
         // 状态概览
         this.StatusOverview()
 
+        // 快捷操作入口
+        this.QuickActionsSection()
+
         // 刷新按钮
         Button('刷新数据')
           .width('80%')
@@ -290,6 +416,58 @@ struct Index {
     }
     .layoutWeight(1)
     .scrollBar(BarState.Off)
+  }
+
+  @Builder
+  QuickActionsSection() {
+    Column() {
+      Text('⚡ 快捷操作')
+        .fontSize(16)
+        .fontWeight(FontWeight.Medium)
+        .width('100%')
+        .margin({ bottom: 12 })
+
+      Row() {
+        this.ActionButton('💧 灌溉', '#2196F3', 'pages/IrrigationPage')
+        this.ActionButton('☀️ 补光', '#FF9800', 'pages/LightPage')
+      }
+      .width('100%')
+      .justifyContent(FlexAlign.SpaceEvenly)
+
+      Row() {
+        this.ActionButton('🌬️ 通风', '#03A9F4', 'pages/VentilationPage')
+        this.ActionButton('🔔 报警', '#F44336', 'pages/AlarmPage')
+      }
+      .width('100%')
+      .justifyContent(FlexAlign.SpaceEvenly)
+      .margin({ top: 12 })
+    }
+    .width('92%')
+    .padding(16)
+    .margin({ top: 16 })
+    .backgroundColor(Color.White)
+    .borderRadius(12)
+  }
+
+  @Builder
+  ActionButton(title: string, color: ResourceColor, page: string) {
+    Column() {
+      Text(title.split(' ')[0])
+        .fontSize(28)
+
+      Text(title.split(' ')[1] || '')
+        .fontSize(14)
+        .fontColor('#333333')
+        .margin({ top: 6 })
+    }
+    .width('45%')
+    .height(80)
+    .backgroundColor(color + '15')
+    .borderRadius(12)
+    .justifyContent(FlexAlign.Center)
+    .onClick(() => {
+      router.pushUrl({ url: page })
+    })
   }
 
   @Builder

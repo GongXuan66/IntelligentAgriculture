@@ -4,9 +4,10 @@ import { SensorService } from '../services/SensorService'
 import { DeviceService } from '../services/DeviceService'
 import { Device, DeviceStatus, DeviceType } from '../models/Device'
 import { AppConfig } from '../config/AppConfig'
-import { NavBottom } from '../components/NavBottom'
+import { AppState } from '../config/AppState'
 import { EnvironmentData } from '../models/EnvironmentData'
 import { IrrigationCalibration } from '../config/IrrigationCalibration'
+import router from '@ohos.router'
 
 /**
  * 智能灌溉页面 - 支持多设备精细控制
@@ -26,6 +27,7 @@ struct IrrigationPage {
   @State autoWaterAmount: number = 0
   @State autoDuration: number = 0
   @State autoPlanReason: string = ''
+  @State currentPointName: string = ''
 
   // 设备相关状态
   @State pumpList: Device[] = []           // 水泵列表
@@ -38,9 +40,17 @@ struct IrrigationPage {
   private sensorService: SensorService = new SensorService()
   private deviceService: DeviceService = new DeviceService()
   private appConfig: AppConfig = AppConfig.getInstance()
+  private appState: AppState = AppState.getInstance()
   private statusTimer: number = -1
 
   aboutToAppear() {
+    // 检查是否有选中的检测点
+    if (!this.appState.currentPoint) {
+      router.replaceUrl({ url: 'pages/FieldListPage' })
+      return
+    }
+    
+    this.currentPointName = this.appState.currentPoint.pointName
     this.isSimulationMode = this.appConfig.simulationMode
     this.loadData()
     this.loadHistory()
@@ -94,7 +104,8 @@ struct IrrigationPage {
 
   async loadData() {
     try {
-      let envData = await this.sensorService.getEnvironmentData()
+      const pointId = this.appState.currentPoint?.id
+      let envData = await this.sensorService.getEnvironmentData(pointId)
       this.soilMoisture = envData.soilMoisture
 
       let config = this.irrigationService.getConfig()
@@ -120,7 +131,14 @@ struct IrrigationPage {
 
   async loadDevices() {
     try {
-      const allDevices = await this.deviceService.getDeviceList()
+      const pointId = this.appState.currentPoint?.id
+      if (!pointId) {
+        this.pumpList = []
+        this.valveList = []
+        return
+      }
+      
+      const allDevices = await this.deviceService.getDeviceList(pointId)
       this.pumpList = allDevices.filter(d => d.deviceType === DeviceType.WATER_PUMP)
       this.valveList = allDevices.filter(d => d.deviceType === DeviceType.VALVE)
       
@@ -133,6 +151,8 @@ struct IrrigationPage {
       }
     } catch (error) {
       console.error('加载设备列表失败:', error)
+      this.pumpList = []
+      this.valveList = []
     }
   }
 
@@ -245,26 +265,52 @@ struct IrrigationPage {
   build() {
     Column() {
       // 标题栏
-      Row() {
-        Text('智能灌溉')
-          .fontSize(20)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#333333')
-
-        Blank()
-
+      Column() {
         Row() {
-          Text(this.isSimulationMode ? '模拟' : '在线')
-            .fontSize(12)
-            .fontColor(this.isSimulationMode ? '#FF9800' : '#4CAF50')
+          // 返回按钮
+          Row() {
+            Text('←')
+              .fontSize(20)
+              .fontColor('#333333')
+          }
+          .width(36)
+          .height(36)
+          .justifyContent(FlexAlign.Center)
+          .backgroundColor('#f5f5f5')
+          .borderRadius(18)
+          .onClick(() => {
+            router.back()
+          })
+
+          Text('智能灌溉')
+            .fontSize(20)
+            .fontWeight(FontWeight.Bold)
+            .fontColor('#333333')
+            .margin({ left: 12 })
+
+          Blank()
+
+          Row() {
+            Text(this.isSimulationMode ? '模拟' : '在线')
+              .fontSize(12)
+              .fontColor(this.isSimulationMode ? '#FF9800' : '#4CAF50')
+          }
+          .padding({ left: 8, right: 8, top: 4, bottom: 4 })
+          .backgroundColor(this.isSimulationMode ? '#FFF3E0' : '#E8F5E9')
+          .borderRadius(4)
         }
-        .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-        .backgroundColor(this.isSimulationMode ? '#FFF3E0' : '#E8F5E9')
-        .borderRadius(4)
+        .width('100%')
+
+        // 当前检测点
+        if (this.currentPointName) {
+          Text(`📍 ${this.currentPointName}`)
+            .fontSize(12)
+            .fontColor('#999999')
+            .margin({ top: 4 })
+        }
       }
       .width('100%')
-      .height(56)
-      .padding({ left: 16, right: 16 })
+      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
       .backgroundColor(Color.White)
 
       // 灌溉中提示
@@ -306,8 +352,6 @@ struct IrrigationPage {
       }
       .layoutWeight(1)
       .scrollBar(BarState.Off)
-
-      NavBottom({ currentIndex: 2 })
     }
     .width('100%')
     .height('100%')

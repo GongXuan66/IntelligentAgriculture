@@ -1,6 +1,10 @@
 {
   "src": [
+    "pages/FieldListPage",
     "pages/Index",
+    "pages/DeviceAllPage",
+    "pages/AIAssistantPage",
+    "pages/ProfilePage",
     "pages/DevicePage",
     "pages/IrrigationPage",
     "pages/LightPage",

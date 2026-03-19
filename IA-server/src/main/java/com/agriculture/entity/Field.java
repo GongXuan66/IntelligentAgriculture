@@ -2,32 +2,39 @@ package com.agriculture.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 检测点实体
+ * 地块实体
  */
 @Data
-@TableName("monitor_point")
-public class MonitorPoint {
+@TableName("field")
+public class Field {
 
     @TableId(type = IdType.AUTO)
     private Long id;
 
     @TableField("field_id")
-    private Long fieldId;
+    private String fieldId;
 
-    @TableField("point_id")
-    private String pointId;
+    @TableField("field_name")
+    private String fieldName;
 
-    @TableField("point_name")
-    private String pointName;
+    @TableField("field_type")
+    private String fieldType;
 
     @TableField("location")
     private String location;
 
+    @TableField("area")
+    private BigDecimal area;
+
     @TableField("crop_type")
     private String cropType;
+
+    @TableField("description")
+    private String description;
 
     @TableField("status")
     private Integer status = 1;

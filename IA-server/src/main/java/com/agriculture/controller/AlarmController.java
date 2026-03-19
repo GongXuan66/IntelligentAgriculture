@@ -56,8 +56,14 @@ public class AlarmController {
      * 获取未处理报警数量
      */
     @GetMapping("/unprocessed/count")
-    public ApiResponse<Long> getUnprocessedCount() {
-        Long count = alarmService.getUnprocessedCount();
+    public ApiResponse<Long> getUnprocessedCount(
+            @RequestParam(required = false) Long pointId) {
+        Long count;
+        if (pointId != null) {
+            count = alarmService.getUnprocessedCountByPointId(pointId);
+        } else {
+            count = alarmService.getUnprocessedCount();
+        }
         return ApiResponse.success(count);
     }
 

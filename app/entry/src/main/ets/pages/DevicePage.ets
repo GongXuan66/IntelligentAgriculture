@@ -1,7 +1,8 @@
 import { Device, DeviceStatus, DeviceType } from '../models/Device'
 import { DeviceService } from '../services/DeviceService'
 import { DeviceCard } from '../components/DeviceCard'
-import { NavBottom } from '../components/NavBottom'
+import { AppState } from '../config/AppState'
+import router from '@ohos.router'
 
 /**
  * 设备控制页面
@@ -11,18 +12,34 @@ import { NavBottom } from '../components/NavBottom'
 struct DevicePage {
   @State deviceList: Device[] = []
   @State isLoading: boolean = true
+  @State currentPointName: string = ''
   
   private deviceService: DeviceService = new DeviceService()
+  private appState: AppState = AppState.getInstance()
 
   aboutToAppear() {
+    // 检查是否有选中的检测点
+    if (!this.appState.currentPoint) {
+      // 没有选中检测点，返回地块总览页
+      router.replaceUrl({ url: 'pages/FieldListPage' })
+      return
+    }
+    
+    this.currentPointName = this.appState.currentPoint.pointName
     this.loadDevices()
   }
 
   async loadDevices() {
     try {
-      this.deviceList = await this.deviceService.getDeviceList()
+      const pointId = this.appState.currentPoint?.id
+      if (pointId) {
+        this.deviceList = await this.deviceService.getDeviceList(pointId)
+      } else {
+        this.deviceList = []
+      }
     } catch (error) {
       console.error('获取设备列表失败:', error)
+      this.deviceList = []
     } finally {
       this.isLoading = false
     }
@@ -44,15 +61,43 @@ struct DevicePage {
   build() {
     Column() {
       // 标题栏
-      Row() {
-        Text('设备控制')
-          .fontSize(20)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#333333')
+      Column() {
+        Row() {
+          // 返回按钮
+          Row() {
+            Text('←')
+              .fontSize(20)
+              .fontColor('#333333')
+          }
+          .width(36)
+          .height(36)
+          .justifyContent(FlexAlign.Center)
+          .backgroundColor('#f5f5f5')
+          .borderRadius(18)
+          .onClick(() => {
+            router.back()
+          })
+          
+          Text('设备控制')
+            .fontSize(20)
+            .fontWeight(FontWeight.Bold)
+            .fontColor('#333333')
+            .margin({ left: 12 })
+          
+          Blank()
+        }
+        .width('100%')
+        
+        // 当前检测点
+        if (this.currentPointName) {
+          Text(`📍 ${this.currentPointName}`)
+            .fontSize(12)
+            .fontColor('#999999')
+            .margin({ top: 4 })
+        }
       }
       .width('100%')
-      .height(56)
-      .padding({ left: 16, right: 16 })
+      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
       .backgroundColor(Color.White)
 
       // 内容区域
@@ -64,6 +109,17 @@ struct DevicePage {
             .color('#4CAF50')
           Text('加载中...')
             .fontSize(14)
+            .fontColor('#999999')
+            .margin({ top: 12 })
+        }
+        .layoutWeight(1)
+        .justifyContent(FlexAlign.Center)
+      } else if (this.deviceList.length === 0) {
+        Column() {
+          Text('🔧')
+            .fontSize(48)
+          Text('该检测点暂无设备')
+            .fontSize(16)
             .fontColor('#999999')
             .margin({ top: 12 })
         }
@@ -84,9 +140,6 @@ struct DevicePage {
         .layoutWeight(1)
         .scrollBar(BarState.Off)
       }
-
-      // 底部导航
-      NavBottom({ currentIndex: 1 })
     }
     .width('100%')
     .height('100%')

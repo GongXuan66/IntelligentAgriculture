@@ -11,12 +11,10 @@ export struct NavBottom {
   @Prop currentIndex: number = 0
 
   private navItems: NavItem[] = [
-    { title: '首页', iconText: '🏠', page: 'pages/Index' },
-    { title: '设备', iconText: '🛠️', page: 'pages/DevicePage' },
-    { title: '灌溉', iconText: '💧', page: 'pages/IrrigationPage' },
-    { title: '光照', iconText: '☀️', page: 'pages/LightPage' },
-    { title: '通风', iconText: '🌬️', page: 'pages/VentilationPage' },
-    { title: '报警', iconText: '🔔', page: 'pages/AlarmPage' }
+    { title: '农田', iconText: '🌾', page: 'pages/FieldListPage' },
+    { title: '设备', iconText: '🔧', page: 'pages/DeviceAllPage' },
+    { title: 'AI助手', iconText: '🤖', page: 'pages/AIAssistantPage' },
+    { title: '我的', iconText: '👤', page: 'pages/ProfilePage' }
   ]
 
   build() {
@@ -24,7 +22,7 @@ export struct NavBottom {
       ForEach(this.navItems, (item: NavItem, index: number) => {
         Column() {
           Text(item.iconText)
-            .fontSize(20)
+            .fontSize(22)
 
           Text(item.title)
             .fontSize(11)
@@ -42,7 +40,7 @@ export struct NavBottom {
       })
     }
     .width('100%')
-    .height(56)
+    .height(60)
     .backgroundColor(Color.White)
     .shadow({
       radius: 8,

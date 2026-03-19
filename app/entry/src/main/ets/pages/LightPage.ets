@@ -3,7 +3,8 @@ import { SensorService } from '../services/SensorService'
 import { DeviceService } from '../services/DeviceService'
 import { Device, DeviceStatus, DeviceType } from '../models/Device'
 import { AppConfig } from '../config/AppConfig'
-import { NavBottom } from '../components/NavBottom'
+import { AppState } from '../config/AppState'
+import router from '@ohos.router'
 
 class LightSample {
   time: string = ''
@@ -24,6 +25,7 @@ struct LightPage {
   @State lastUpdate: string = '--'
   @State lightSamples: LightSample[] = []
   @State isSimulationMode: boolean = false
+  @State currentPointName: string = ''
 
   // 设备相关状态
   @State ledList: Device[] = []
@@ -33,10 +35,18 @@ struct LightPage {
   private readonly sensorService: SensorService = new SensorService()
   private readonly deviceService: DeviceService = new DeviceService()
   private readonly appConfig: AppConfig = AppConfig.getInstance()
+  private readonly appState: AppState = AppState.getInstance()
   private refreshInterval: number = -1
   private isAdjusting: boolean = false
 
   aboutToAppear() {
+    // 检查是否有选中的检测点
+    if (!this.appState.currentPoint) {
+      router.replaceUrl({ url: 'pages/FieldListPage' })
+      return
+    }
+    
+    this.currentPointName = this.appState.currentPoint.pointName
     this.isSimulationMode = this.appConfig.simulationMode
     this.targetLight = this.lightService.getLightThreshold()
     this.loadDevices()
@@ -54,7 +64,13 @@ struct LightPage {
 
   async loadDevices() {
     try {
-      const allDevices = await this.deviceService.getDeviceList()
+      const pointId = this.appState.currentPoint?.id
+      if (!pointId) {
+        this.ledList = []
+        return
+      }
+      
+      const allDevices = await this.deviceService.getDeviceList(pointId)
       this.ledList = allDevices.filter(d => d.deviceType === DeviceType.LED)
       
       // 默认选中第一个设备
@@ -64,6 +80,7 @@ struct LightPage {
       }
     } catch (error) {
       console.error('加载LED设备列表失败:', error)
+      this.ledList = []
     }
   }
 
@@ -79,7 +96,8 @@ struct LightPage {
 
   private async refreshLightData(): Promise<void> {
     try {
-      let envData = await this.sensorService.getEnvironmentData()
+      const pointId = this.appState.currentPoint?.id
+      let envData = await this.sensorService.getEnvironmentData(pointId)
       this.currentLight = envData.light
       this.lastUpdate = this.formatTime(envData.timestamp)
       this.appendSample(this.currentLight, this.lastUpdate)
@@ -155,26 +173,52 @@ struct LightPage {
 
   build() {
     Column() {
-      Row() {
-        Text('光照管理')
-          .fontSize(20)
-          .fontWeight(FontWeight.Bold)
-          .fontColor('#333333')
-
-        Blank()
-
+      Column() {
         Row() {
-          Text(this.isSimulationMode ? '模拟' : '在线')
-            .fontSize(12)
-            .fontColor(this.isSimulationMode ? '#FF9800' : '#4CAF50')
+          // 返回按钮
+          Row() {
+            Text('←')
+              .fontSize(20)
+              .fontColor('#333333')
+          }
+          .width(36)
+          .height(36)
+          .justifyContent(FlexAlign.Center)
+          .backgroundColor('#f5f5f5')
+          .borderRadius(18)
+          .onClick(() => {
+            router.back()
+          })
+
+          Text('光照管理')
+            .fontSize(20)
+            .fontWeight(FontWeight.Bold)
+            .fontColor('#333333')
+            .margin({ left: 12 })
+
+          Blank()
+
+          Row() {
+            Text(this.isSimulationMode ? '模拟' : '在线')
+              .fontSize(12)
+              .fontColor(this.isSimulationMode ? '#FF9800' : '#4CAF50')
+          }
+          .padding({ left: 8, right: 8, top: 4, bottom: 4 })
+          .backgroundColor(this.isSimulationMode ? '#FFF3E0' : '#E8F5E9')
+          .borderRadius(4)
         }
-        .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-        .backgroundColor(this.isSimulationMode ? '#FFF3E0' : '#E8F5E9')
-        .borderRadius(4)
+        .width('100%')
+
+        // 当前检测点
+        if (this.currentPointName) {
+          Text(`📍 ${this.currentPointName}`)
+            .fontSize(12)
+            .fontColor('#999999')
+            .margin({ top: 4 })
+        }
       }
       .width('100%')
-      .height(56)
-      .padding({ left: 16, right: 16 })
+      .padding({ left: 16, right: 16, top: 12, bottom: 12 })
       .backgroundColor(Color.White)
 
       Scroll() {
@@ -189,8 +233,6 @@ struct LightPage {
       }
       .layoutWeight(1)
       .scrollBar(BarState.Off)
-
-      NavBottom({ currentIndex: 3 })
     }
     .width('100%')
     .height('100%')

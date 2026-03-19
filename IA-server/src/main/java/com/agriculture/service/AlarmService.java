@@ -68,6 +68,14 @@ public class AlarmService {
         return alarmMapper.countUnprocessed();
     }
 
+    public Long getUnprocessedCountByPointId(Long pointId) {
+        return alarmMapper.countUnprocessedByPointId(pointId);
+    }
+
+    public Long getUnprocessedCountByPointId(Long pointId) {
+        return alarmMapper.countUnprocessedByPointId(pointId);
+    }
+
     public AlarmDTO getAlarmById(Long id) {
         Alarm alarm = alarmMapper.selectById(id);
         return alarm != null ? toDTO(alarm) : null;

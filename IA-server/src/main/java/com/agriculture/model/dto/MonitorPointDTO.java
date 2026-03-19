@@ -11,6 +11,7 @@ import java.time.LocalDateTime;
 public class MonitorPointDTO {
 
     private Long id;
+    private Long fieldId;
     private String pointId;
     private String pointName;
     private String location;
@@ -18,9 +19,14 @@ public class MonitorPointDTO {
     private Integer status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+    
+    // 关联的地块名称（用于显示）
+    private String fieldName;
 
     @Data
     public static class CreateRequest {
+        private Long fieldId;
+
         @NotBlank(message = "检测点ID不能为空")
         private String pointId;
 
@@ -33,6 +39,7 @@ public class MonitorPointDTO {
 
     @Data
     public static class UpdateRequest {
+        private Long fieldId;
         private String pointName;
         private String location;
         private String cropType;
