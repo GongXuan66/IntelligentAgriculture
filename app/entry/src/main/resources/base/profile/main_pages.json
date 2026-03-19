@@ -1,0 +1,11 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/DevicePage",
+    "pages/IrrigationPage",
+    "pages/LightPage",
+    "pages/VentilationPage",
+    "pages/AlarmPage",
+    "pages/HistoryChartPage"
+  ]
+}
