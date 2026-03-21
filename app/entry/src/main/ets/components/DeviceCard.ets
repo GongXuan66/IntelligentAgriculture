@@ -5,8 +5,17 @@ import { Device, DeviceStatus, DeviceType } from '../models/Device'
  */
 @Component
 export struct DeviceCard {
-  @Prop device: Device = new Device()
+  @Prop @Watch('onDeviceChange') device: Device = new Device()
+  @State isDeviceOn: boolean = false
   onToggle?: (device: Device, isOn: boolean) => void
+
+  aboutToAppear() {
+    this.isDeviceOn = this.device.status === DeviceStatus.WORKING
+  }
+
+  onDeviceChange() {
+    this.isDeviceOn = this.device.status === DeviceStatus.WORKING
+  }
 
   build() {
     Row() {
@@ -36,7 +45,7 @@ export struct DeviceCard {
       // 控制开关
       Toggle({
         type: ToggleType.Switch,
-        isOn: this.device.status === DeviceStatus.WORKING
+        isOn: this.isDeviceOn
       })
         .selectedColor('#4CAF50')
         .onChange((isOn: boolean) => {

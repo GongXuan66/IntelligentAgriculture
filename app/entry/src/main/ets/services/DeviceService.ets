@@ -39,15 +39,18 @@ export class DeviceService {
    * 获取设备列表（带缓存）
    */
   async getDeviceList(pointId?: number): Promise<Device[]> {
+    let url = '/api/device/list'
+    if (pointId) {
+      url += `?pointId=${pointId}`
+    }
+    console.info(`[DeviceService] 请求设备列表: ${url}`)
+    
     try {
-      let url = '/api/device/list'
-      if (pointId) {
-        url += `?pointId=${pointId}`
-      }
       let result = await HttpClient.get<ApiResponse<DeviceDTO[]>>(url)
-      const devices = result.data.map(this.toDevice)
+      console.info(`[DeviceService] API返回成功, 设备数量: ${result.data.length}`)
+      const devices = result.data.map((dto: DeviceDTO) => this.toDevice(dto))
       
-      // 保存到缓存（忽略错误）
+      // 保存到缓存
       try {
         await this.prefsService.setDeviceListCache(devices)
         await this.prefsService.setLastSyncTime(Date.now())
@@ -56,21 +59,12 @@ export class DeviceService {
       }
       
       return devices
-    } catch (error) {
-      console.error('获取设备列表失败:', error)
+    } catch (err) {
+      let errorMsg = err instanceof Error ? err.message : String(err)
+      console.error('[DeviceService] API请求失败:', errorMsg)
       
-      // 尝试从缓存读取（忽略错误）
-      try {
-        const cached = await this.prefsService.getDeviceListCache()
-        if (cached && !this.prefsService.isCacheExpired(cached.cachedAt, this.CACHE_MAX_AGE)) {
-          console.log('[DeviceService] 使用缓存数据')
-          return cached.devices
-        }
-      } catch (cacheError) {
-        console.warn('[DeviceService] 读取缓存失败:', cacheError)
-      }
-      
-      return this.getMockDevices()
+      // 返回空数组，让界面显示"暂无设备"
+      return []
     }
   }
   

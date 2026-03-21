@@ -61,6 +61,7 @@ knife4j:
 logging:
   level:
     com.agriculture: DEBUG
+    dev.langchain4j: DEBUG
 
 cache:
   environment:
@@ -69,3 +70,15 @@ cache:
       ttl-seconds: 30
     redis:
       ttl-seconds: 120
+
+# LangChain4j AI 配置
+langchain4j:
+  open-ai:
+    chat-model:
+      api-key: ms-e374a291-3fd1-4312-8bbf-0776d4fdcdfa
+      base-url: https://api-inference.modelscope.cn/v1
+      model-name: moonshotai/Kimi-K2.5
+    streaming-chat-model:
+      api-key: ms-e374a291-3fd1-4312-8bbf-0776d4fdcdfa
+      base-url: https://api-inference.modelscope.cn/v1
+      model-name: moonshotai/Kimi-K2.5

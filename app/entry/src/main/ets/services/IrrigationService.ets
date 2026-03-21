@@ -469,7 +469,7 @@ export class IrrigationService {
   async getIrrigationHistory(pointId: number = 1): Promise<IrrigationRecord[]> {
     try {
       let result = await HttpClient.get<ApiResponse<IrrigationDTO[]>>('/api/irrigation/logs?pointId=' + pointId)
-      return result.data.map(this.toRecord)
+      return result.data.map((dto: IrrigationDTO) => this.toRecord(dto))
     } catch (error) {
       console.error('获取灌溉历史失败：', error)
       return []

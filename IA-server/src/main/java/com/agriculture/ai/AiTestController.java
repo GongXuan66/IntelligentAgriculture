@@ -8,10 +8,13 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * AI 助手控制器
@@ -28,14 +31,53 @@ public class AiTestController {
     private final ChatHistoryService chatHistoryService;
 
     /**
+     * 同步对话（POST，供前端调用）
+     * @param request 请求体 {sessionId, message, context}
+     * @return JSON 响应 {code, message, data: {reply, sessionId}}
+     */
+    @Operation(summary = "AI对话(同步)", description = "POST方式调用，返回完整JSON响应")
+    @PostMapping(value = "/chat", produces = MediaType.APPLICATION_JSON_VALUE)
+    public ResponseEntity<Map<String, Object>> chatSync(@RequestBody Map<String, String> request) {
+        String sessionId = request.getOrDefault("sessionId", "");
+        String message = request.getOrDefault("message", "你好");
+        String context = request.getOrDefault("context", "");
+
+        // 如果有上下文信息，附加到消息中
+        String fullMessage = context.isEmpty() ? message : context + "\n\n用户问题：" + message;
+
+        String reply;
+        if (sessionId != null && !sessionId.isBlank()) {
+            // 带记忆的对话
+            chatHistoryService.saveUserMessage(sessionId, message);
+            reply = assistant.chatSync(sessionId, fullMessage);
+            chatHistoryService.saveAssistantMessage(sessionId, reply);
+        } else {
+            // 无记忆的一次性对话
+            sessionId = "session_" + System.currentTimeMillis();
+            reply = assistant.chatSync(sessionId, fullMessage);
+        }
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("reply", reply);
+        data.put("sessionId", sessionId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 200);
+        response.put("message", "success");
+        response.put("data", data);
+
+        return ResponseEntity.ok(response);
+    }
+
+    /**
      * 流式对话（SSE）
      * @param message 用户消息
      * @param sessionId 会话ID（可选，传入则启用记忆和历史记录）
      * @return 流式响应
      */
-    @Operation(summary = "AI对话", description = "支持流式响应，传入sessionId启用对话记忆")
-    @GetMapping(value = "/chat", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
-    public Flux<String> chat(
+    @Operation(summary = "AI对话(流式)", description = "支持流式响应，传入sessionId启用对话记忆")
+    @GetMapping(value = "/chat/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    public Flux<String> chatStream(
             @Parameter(description = "用户消息") 
             @RequestParam(value = "message", defaultValue = "你好") String message,
             @Parameter(description = "会话ID，传入则启用记忆") 

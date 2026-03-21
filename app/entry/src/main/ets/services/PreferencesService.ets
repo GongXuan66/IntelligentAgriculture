@@ -29,6 +29,13 @@ export class StorageKeys {
   // 离线队列
   static readonly OFFLINE_COMMAND_QUEUE = 'offline_command_queue'
   static readonly OFFLINE_LOG_QUEUE = 'offline_log_queue'
+  
+  // AI对话历史
+  static readonly AI_CHAT_HISTORY = 'ai_chat_history'
+  // AI会话列表
+  static readonly AI_SESSION_LIST = 'ai_session_list'
+  // 当前会话ID
+  static readonly AI_CURRENT_SESSION_ID = 'ai_current_session_id'
 }
 
 /**
@@ -78,6 +85,26 @@ export interface StorageStats {
   pendingCommands: number
   pendingLogs: number
   lastSyncTime: string
+}
+
+/**
+ * AI对话历史记录项
+ */
+export interface ChatHistoryItem {
+  role: string      // 'user' or 'assistant'
+  content: string
+  time: string
+}
+
+/**
+ * AI会话
+ */
+export interface ChatSession {
+  id: string
+  title: string
+  messages: ChatHistoryItem[]
+  createdAt: string
+  updatedAt: string
 }
 
 /**
@@ -559,6 +586,220 @@ export class PreferencesService {
     await this.preferences!.clear()
     await this.preferences!.flush()
     console.log('[PreferencesService] 所有数据已清除')
+  }
+
+  // ==================== AI会话管理 ====================
+
+  /**
+   * 生成唯一会话ID
+   */
+  private generateSessionId(): string {
+    return 'session_' + Date.now() + '_' + Math.random().toString(36).substring(2, 9)
+  }
+
+  /**
+   * 获取会话列表
+   */
+  async getAISessionList(): Promise<ChatSession[]> {
+    this.ensureInitialized()
+    try {
+      const jsonStr = await this.preferences!.get(StorageKeys.AI_SESSION_LIST, '[]') as string
+      return JSON.parse(jsonStr) as ChatSession[]
+    } catch (error) {
+      console.error('[PreferencesService] 获取会话列表失败:', error)
+      return []
+    }
+  }
+
+  /**
+   * 保存会话列表
+   */
+  async setAISessionList(sessions: ChatSession[]): Promise<void> {
+    this.ensureInitialized()
+    try {
+      await this.preferences!.put(StorageKeys.AI_SESSION_LIST, JSON.stringify(sessions))
+      await this.preferences!.flush()
+    } catch (error) {
+      console.error('[PreferencesService] 保存会话列表失败:', error)
+    }
+  }
+
+  /**
+   * 获取当前会话ID
+   */
+  async getCurrentSessionId(): Promise<string> {
+    this.ensureInitialized()
+    try {
+      const id = await this.preferences!.get(StorageKeys.AI_CURRENT_SESSION_ID, '') as string
+      return id
+    } catch (error) {
+      console.error('[PreferencesService] 获取当前会话ID失败:', error)
+      return ''
+    }
+  }
+
+  /**
+   * 设置当前会话ID
+   */
+  async setCurrentSessionId(sessionId: string): Promise<void> {
+    this.ensureInitialized()
+    try {
+      await this.preferences!.put(StorageKeys.AI_CURRENT_SESSION_ID, sessionId)
+      await this.preferences!.flush()
+    } catch (error) {
+      console.error('[PreferencesService] 设置当前会话ID失败:', error)
+    }
+  }
+
+  /**
+   * 创建新会话
+   */
+  async createAISession(): Promise<ChatSession> {
+    const sessions = await this.getAISessionList()
+    const now = new Date().toISOString()
+    const newSession: ChatSession = {
+      id: this.generateSessionId(),
+      title: '新对话',
+      messages: [],
+      createdAt: now,
+      updatedAt: now
+    }
+    sessions.unshift(newSession)
+    await this.setAISessionList(sessions)
+    await this.setCurrentSessionId(newSession.id)
+    return newSession
+  }
+
+  /**
+   * 获取指定会话
+   */
+  async getAISession(sessionId: string): Promise<ChatSession | null> {
+    const sessions = await this.getAISessionList()
+    for (let i = 0; i < sessions.length; i++) {
+      if (sessions[i].id === sessionId) {
+        return sessions[i]
+      }
+    }
+    return null
+  }
+
+  /**
+   * 获取当前会话（如果不存在则创建）
+   */
+  async getCurrentSession(): Promise<ChatSession> {
+    const currentId = await this.getCurrentSessionId()
+    if (currentId) {
+      const session = await this.getAISession(currentId)
+      if (session) {
+        return session
+      }
+    }
+    // 没有当前会话，创建新会话
+    return await this.createAISession()
+  }
+
+  /**
+   * 更新会话
+   */
+  async updateAISession(session: ChatSession): Promise<void> {
+    const sessions = await this.getAISessionList()
+    for (let i = 0; i < sessions.length; i++) {
+      if (sessions[i].id === session.id) {
+        sessions[i] = session
+        break
+      }
+    }
+    await this.setAISessionList(sessions)
+  }
+
+  /**
+   * 添加消息到当前会话
+   */
+  async addAIMessage(role: string, content: string): Promise<void> {
+    const session = await this.getCurrentSession()
+    const now = new Date().toISOString()
+    const item: ChatHistoryItem = {
+      role: role,
+      content: content,
+      time: now
+    }
+    session.messages.push(item)
+    session.updatedAt = now
+    
+    // 自动生成标题（取第一条用户消息的前20个字符）
+    if (session.title === '新对话' && role === 'user') {
+      session.title = content.length > 20 ? content.substring(0, 20) + '...' : content
+    }
+    
+    await this.updateAISession(session)
+  }
+
+  /**
+   * 删除会话
+   */
+  async deleteAISession(sessionId: string): Promise<void> {
+    const sessions = await this.getAISessionList()
+    const filtered = sessions.filter(s => s.id !== sessionId)
+    await this.setAISessionList(filtered)
+    
+    // 如果删除的是当前会话，清空当前会话ID
+    const currentId = await this.getCurrentSessionId()
+    if (currentId === sessionId) {
+      await this.setCurrentSessionId('')
+    }
+  }
+
+  /**
+   * 清空所有会话
+   */
+  async clearAllAISessions(): Promise<void> {
+    this.ensureInitialized()
+    await this.preferences!.put(StorageKeys.AI_SESSION_LIST, '[]')
+    await this.preferences!.put(StorageKeys.AI_CURRENT_SESSION_ID, '')
+    await this.preferences!.flush()
+    console.log('[PreferencesService] 所有AI会话已清空')
+  }
+
+  // ==================== 兼容旧API ====================
+
+  /**
+   * 获取AI对话历史（兼容旧API）
+   * @param maxCount 最大返回数量，默认50条
+   */
+  async getAIChatHistory(maxCount: number = 50): Promise<ChatHistoryItem[]> {
+    const session = await this.getCurrentSession()
+    const messages = session.messages
+    if (messages.length > maxCount) {
+      return messages.slice(-maxCount)
+    }
+    return messages
+  }
+
+  /**
+   * 保存AI对话历史（兼容旧API）
+   */
+  async setAIChatHistory(history: ChatHistoryItem[]): Promise<void> {
+    const session = await this.getCurrentSession()
+    session.messages = history
+    session.updatedAt = new Date().toISOString()
+    await this.updateAISession(session)
+  }
+
+  /**
+   * 添加单条对话记录（兼容旧API）
+   */
+  async addAIChatMessage(role: string, content: string): Promise<void> {
+    await this.addAIMessage(role, content)
+  }
+
+  /**
+   * 清空AI对话历史（兼容旧API）
+   */
+  async clearAIChatHistory(): Promise<void> {
+    const session = await this.getCurrentSession()
+    session.messages = []
+    session.updatedAt = new Date().toISOString()
+    await this.updateAISession(session)
   }
 
   /**

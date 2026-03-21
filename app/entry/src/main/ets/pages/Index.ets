@@ -112,7 +112,8 @@ struct Index {
 
   async loadDeviceData() {
     try {
-      const devices = await this.deviceService.getDeviceList()
+      const pointId = this.currentPoint?.id || this.appState.currentPointId
+      const devices = await this.deviceService.getDeviceList(pointId)
       this.deviceCount = devices.length
       this.onlineCount = devices.filter(d => d.status === DeviceStatus.ONLINE).length
       this.workingCount = devices.filter(d => d.status === DeviceStatus.WORKING).length

@@ -4,13 +4,13 @@ import http from '@ohos.net.http'
  * HTTP客户端配置
  */
 export class HttpConfig {
-  // 服务器地址 - 修改为你的电脑IP地址
-  // 本机测试可用: http://127.0.0.1:8080 或 http://localhost:8080
-  // 真机测试需用电脑局域网IP: http://192.168.x.x:8080
-  //previewer
-  static readonly BASE_URL: string = 'http://localhost:8123'
-  //模拟器
-  //static readonly BASE_URL: string = '10.252.147.68:8123'
+  // 服务器地址配置说明:
+  // - DevEco 预览器: http://localhost:8123
+  // - 本地模拟器: 使用电脑实际IP地址
+  // - 真机调试: http://电脑局域网IP:8123
+  
+  // 当前配置: 使用实际IP地址
+  static readonly BASE_URL: string = 'http://10.150.211.229:8123'
   static readonly TIMEOUT: number = 60000
 }
 
@@ -23,9 +23,13 @@ export class HttpClient {
    */
   static async get<T>(url: string): Promise<T> {
     let httpRequest = http.createHttp()
+    let fullUrl = `${HttpConfig.BASE_URL}${url}`
+    console.info(`[HttpClient] GET请求: ${fullUrl}`)
+    
+    let response: http.HttpResponse
     try {
-      let response = await httpRequest.request(
-        `${HttpConfig.BASE_URL}${url}`,
+      response = await httpRequest.request(
+        fullUrl,
         {
           method: http.RequestMethod.GET,
           connectTimeout: HttpConfig.TIMEOUT,
@@ -35,14 +39,23 @@ export class HttpClient {
           }
         }
       )
-      
-      if (response.responseCode === 200) {
-        return JSON.parse(response.result as string) as T
-      } else {
-        throw new Error(`HTTP Error: ${response.responseCode}`)
-      }
-    } finally {
+    } catch (err) {
       httpRequest.destroy()
+      let errorMsg = err instanceof Error ? err.message : String(err)
+      console.error(`[HttpClient] 网络请求失败: ${errorMsg}`)
+      throw new Error(`网络请求失败: ${errorMsg}`)
+    }
+    
+    httpRequest.destroy()
+    console.info(`[HttpClient] 响应码: ${response.responseCode}`)
+    
+    if (response.responseCode === 200) {
+      let result: T = JSON.parse(response.result as string) as T
+      console.info(`[HttpClient] 请求成功`)
+      return result
+    } else {
+      console.error(`[HttpClient] HTTP错误: ${response.responseCode}`)
+      throw new Error(`HTTP错误: ${response.responseCode}`)
     }
   }
 
@@ -51,9 +64,13 @@ export class HttpClient {
    */
   static async post<T>(url: string, data: object): Promise<T> {
     let httpRequest = http.createHttp()
+    let fullUrl = `${HttpConfig.BASE_URL}${url}`
+    console.info(`[HttpClient] POST请求: ${fullUrl}`)
+    
+    let response: http.HttpResponse
     try {
-      let response = await httpRequest.request(
-        `${HttpConfig.BASE_URL}${url}`,
+      response = await httpRequest.request(
+        fullUrl,
         {
           method: http.RequestMethod.POST,
           connectTimeout: HttpConfig.TIMEOUT,
@@ -64,14 +81,23 @@ export class HttpClient {
           extraData: JSON.stringify(data)
         }
       )
-      
-      if (response.responseCode === 200) {
-        return JSON.parse(response.result as string) as T
-      } else {
-        throw new Error(`HTTP Error: ${response.responseCode}`)
-      }
-    } finally {
+    } catch (err) {
       httpRequest.destroy()
+      let errorMsg = err instanceof Error ? err.message : String(err)
+      console.error(`[HttpClient] 网络请求失败: ${errorMsg}`)
+      throw new Error(`网络请求失败: ${errorMsg}`)
+    }
+    
+    httpRequest.destroy()
+    console.info(`[HttpClient] 响应码: ${response.responseCode}`)
+    
+    if (response.responseCode === 200) {
+      let result: T = JSON.parse(response.result as string) as T
+      console.info(`[HttpClient] 请求成功`)
+      return result
+    } else {
+      console.error(`[HttpClient] HTTP错误: ${response.responseCode}`)
+      throw new Error(`HTTP错误: ${response.responseCode}`)
     }
   }
 
@@ -80,9 +106,13 @@ export class HttpClient {
    */
   static async put<T>(url: string, data: object): Promise<T> {
     let httpRequest = http.createHttp()
+    let fullUrl = `${HttpConfig.BASE_URL}${url}`
+    console.info(`[HttpClient] PUT请求: ${fullUrl}`)
+    
+    let response: http.HttpResponse
     try {
-      let response = await httpRequest.request(
-        `${HttpConfig.BASE_URL}${url}`,
+      response = await httpRequest.request(
+        fullUrl,
         {
           method: http.RequestMethod.PUT,
           connectTimeout: HttpConfig.TIMEOUT,
@@ -93,14 +123,23 @@ export class HttpClient {
           extraData: JSON.stringify(data)
         }
       )
-      
-      if (response.responseCode === 200) {
-        return JSON.parse(response.result as string) as T
-      } else {
-        throw new Error(`HTTP Error: ${response.responseCode}`)
-      }
-    } finally {
+    } catch (err) {
       httpRequest.destroy()
+      let errorMsg = err instanceof Error ? err.message : String(err)
+      console.error(`[HttpClient] 网络请求失败: ${errorMsg}`)
+      throw new Error(`网络请求失败: ${errorMsg}`)
+    }
+    
+    httpRequest.destroy()
+    console.info(`[HttpClient] 响应码: ${response.responseCode}`)
+    
+    if (response.responseCode === 200) {
+      let result: T = JSON.parse(response.result as string) as T
+      console.info(`[HttpClient] 请求成功`)
+      return result
+    } else {
+      console.error(`[HttpClient] HTTP错误: ${response.responseCode}`)
+      throw new Error(`HTTP错误: ${response.responseCode}`)
     }
   }
 }
