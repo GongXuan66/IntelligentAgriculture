@@ -11,7 +11,7 @@ export struct NavBottom {
   @Prop currentIndex: number = 0
 
   private navItems: NavItem[] = [
-    { title: '农田', iconText: '🌾', page: 'pages/FieldListPage' },
+    { title: '农田', iconText: '🌾', page: 'pages/Index' },
     { title: '设备', iconText: '🔧', page: 'pages/DeviceAllPage' },
     { title: 'AI助手', iconText: '🤖', page: 'pages/AIAssistantPage' },
     { title: '我的', iconText: '👤', page: 'pages/ProfilePage' }

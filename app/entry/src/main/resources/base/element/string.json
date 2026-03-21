@@ -11,6 +11,14 @@
     {
       "name": "EntryAbility_label",
       "value": "label"
+    },
+    {
+      "name": "microphone_reason",
+      "value": "用于语音控制设备，让您可以通过语音命令控制农业设备"
+    },
+    {
+      "name": "location_reason",
+      "value": "用于获取您的位置，以便提供当地天气信息"
     }
   ]
 }

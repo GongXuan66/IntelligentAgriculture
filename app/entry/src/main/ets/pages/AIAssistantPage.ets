@@ -9,6 +9,8 @@ import { DeviceService } from '../services/DeviceService'
 import { IrrigationService } from '../services/IrrigationService'
 import { PreferencesService, ChatHistoryItem, ChatSession } from '../services/PreferencesService'
 import { Device, DeviceType } from '../models/Device'
+import { VoiceService, VoiceRecognitionState, VoiceResult } from '../services/VoiceService'
+import { VoiceCommandParser, ParsedVoiceCommand, VoiceCommandType } from '../services/VoiceCommandParser'
 
 interface ChatMessage {
   role: string  // 'user' or 'assistant'
@@ -66,10 +68,18 @@ struct AIAssistantPage {
   private readonly prefsService: PreferencesService = PreferencesService.getInstance()
   private readonly appState: AppState = AppState.getInstance()
   private readonly appConfig: AppConfig = AppConfig.getInstance()
+  private readonly voiceService: VoiceService = VoiceService.getInstance()
   private scrollController: Scroller = new Scroller()
+  
+  // 语音输入状态
+  @State private isListening: boolean = false
+  @State private voiceStatusText: string = ''
 
   async aboutToAppear() {
     this.isSimulationMode = this.appConfig.simulationMode
+    
+    // 初始化语音服务
+    await this.voiceService.init()
     
     // 加载当前环境数据
     const pointId = this.appState.currentPoint?.id
@@ -608,7 +618,26 @@ struct AIAssistantPage {
 
       // 输入区域
       Row() {
-        TextInput({ placeholder: '输入您的问题...', text: this.inputText })
+        // 语音输入按钮
+        Button() {
+          if (this.isListening) {
+            LoadingProgress()
+              .width(20)
+              .height(20)
+              .color(Color.White)
+          } else {
+            Text('🎤')
+              .fontSize(18)
+          }
+        }
+        .width(40)
+        .height(40)
+        .backgroundColor(this.isListening ? '#F44336' : '#2196F3')
+        .borderRadius(20)
+        .margin({ right: 8 })
+        .onClick(() => this.toggleVoiceInput())
+
+        TextInput({ placeholder: this.isListening ? '正在聆听...' : '输入您的问题...', text: this.inputText })
           .layoutWeight(1)
           .height(40)
           .backgroundColor('#F5F5F5')
@@ -818,5 +847,56 @@ struct AIAssistantPage {
       let day = date.getDate().toString().padStart(2, '0')
       return `${month}-${day}`
     }
+  }
+
+  /**
+   * 切换语音输入
+   */
+  private toggleVoiceInput(): void {
+    if (this.isListening) {
+      this.voiceService.finish()
+      this.isListening = false
+    } else {
+      this.startVoiceInput()
+    }
+  }
+
+  /**
+   * 开始语音输入
+   */
+  private startVoiceInput(): void {
+    this.isListening = true
+    
+    this.voiceService.startListening({
+      onStateChange: (state: VoiceRecognitionState) => {
+        if (state === VoiceRecognitionState.IDLE) {
+          this.isListening = false
+        } else if (state === VoiceRecognitionState.ERROR) {
+          this.isListening = false
+          this.addMessage('assistant', '❌ 语音识别失败，请重试')
+        }
+      },
+      
+      onResult: (result: VoiceResult) => {
+        if (result.text) {
+          this.inputText = result.text
+          
+          // 如果是最终结果，直接发送
+          if (result.isFinal) {
+            this.isListening = false
+            // 延迟发送，让用户看到识别结果
+            setTimeout(() => {
+              this.sendMessage()
+            }, 300)
+          }
+        }
+      },
+      
+      onError: (errorCode: number, errorMessage: string) => {
+        console.error('语音识别错误:', errorCode, errorMessage)
+        this.isListening = false
+        this.addMessage('assistant', `❌ 语音识别错误: ${errorMessage}`)
+      }
+    })
   }
 }

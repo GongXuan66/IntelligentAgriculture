@@ -1,7 +1,7 @@
 {
   "src": [
-    "pages/FieldListPage",
     "pages/Index",
+    "pages/FieldDetailPage",
     "pages/DeviceAllPage",
     "pages/AIAssistantPage",
     "pages/ProfilePage",

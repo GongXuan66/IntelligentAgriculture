@@ -23,7 +23,7 @@ struct AlarmPage {
   aboutToAppear() {
     // 检查是否有选中的检测点
     if (!this.appState.currentPoint) {
-      router.replaceUrl({ url: 'pages/FieldListPage' })
+      router.replaceUrl({ url: 'pages/Index' })
       return
     }
     

@@ -79,3 +79,10 @@ langchain4j:
       api-key: ms-e374a291-3fd1-4312-8bbf-0776d4fdcdfa
       base-url: https://api-inference.modelscope.cn/v1
       model-name: moonshotai/Kimi-K2.5
+
+# 和风天气API配置
+# 免费申请: https://dev.qweather.com/
+weather:
+  qweather:
+    api-key: "d435cbc050e2435fa3ed643eb95c0470"        # 请在此填入您的和风天气API Key
+    api-host: m66r6yk5c4.re.qweatherapi.com # 免费订阅域名，付费用户使用 api.qweather.com

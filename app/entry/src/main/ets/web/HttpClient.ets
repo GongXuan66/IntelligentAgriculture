@@ -1,16 +1,16 @@
 import http from '@ohos.net.http'
-
 /**
  * HTTP客户端配置
  */
 export class HttpConfig {
-  // 服务器地址配置说明:
-  // - DevEco 预览器: http://localhost:8123
-  // - 本地模拟器: 使用电脑实际IP地址
+
+
   // - 真机调试: http://电脑局域网IP:8123
-  
-  // 当前配置: 使用实际IP地址
-  static readonly BASE_URL: string = 'http://10.150.211.229:8123'
+
+  // - 本地模拟器: 使用电脑实际IP地址
+  static readonly BASE_URL: string = 'http://10.252.148.94:8123'
+  // - DevEco 预览器: http://localhost:8123
+  //static readonly BASE_URL: string = 'http://localhost:8123'
   static readonly TIMEOUT: number = 60000
 }
 

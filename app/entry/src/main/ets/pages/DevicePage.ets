@@ -21,7 +21,7 @@ struct DevicePage {
     // 检查是否有选中的检测点
     if (!this.appState.currentPoint) {
       // 没有选中检测点，返回地块总览页
-      router.replaceUrl({ url: 'pages/FieldListPage' })
+      router.replaceUrl({ url: 'pages/Index' })
       return
     }
     
