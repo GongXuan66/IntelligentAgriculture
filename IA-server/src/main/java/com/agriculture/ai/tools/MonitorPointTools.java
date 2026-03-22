@@ -65,22 +65,20 @@ public class MonitorPointTools {
         report.append("------------------------\n");
         
         for (MonitorPointDTO point : activePoints) {
-            report.append(String.format("ID: %d | 名称: %s | 位置: %s | 作物: %s\n",
+            report.append(String.format("ID: %d | 名称: %s | 位置: %s | 编码: %s\n",
                     point.getId(),
                     point.getPointName(),
                     point.getLocation() != null ? point.getLocation() : "未设置",
-                    point.getCropType() != null ? point.getCropType() : "未设置"
+                    point.getPointCode() != null ? point.getPointCode() : "未设置"
             ));
         }
 
         return report.toString();
     }
 
-    @Tool("获取指定作物类型的所有监控点")
-    public List<MonitorPointDTO> getPointsByCropType(String cropType) {
-        log.info("[AI Tool] 获取作物类型 {} 的监控点", cropType);
-        return monitorPointService.getActivePoints().stream()
-                .filter(p -> cropType.equals(p.getCropType()))
-                .toList();
+    @Tool("获取指定农场ID的所有监控点")
+    public List<MonitorPointDTO> getPointsByFarmId(Long farmId) {
+        log.info("[AI Tool] 获取农场 {} 的监控点", farmId);
+        return monitorPointService.getPointsByFarmId(farmId);
     }
 }

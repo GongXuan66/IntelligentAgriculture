@@ -1,6 +1,6 @@
 package com.agriculture.ai;
 
-import com.agriculture.entity.ChatHistory;
+import com.agriculture.entity.AiInteraction;
 import com.agriculture.service.ChatHistoryService;
 import dev.langchain4j.store.memory.chat.ChatMemoryStore;
 import io.swagger.v3.oas.annotations.Operation;
@@ -113,7 +113,7 @@ public class AiTestController {
      */
     @Operation(summary = "获取对话历史", description = "获取指定会话的完整对话记录")
     @GetMapping("/history")
-    public List<ChatHistory> getHistory(
+    public List<AiInteraction> getHistory(
             @Parameter(description = "会话ID") 
             @RequestParam("sessionId") String sessionId) {
         return chatHistoryService.getHistoryBySessionId(sessionId);

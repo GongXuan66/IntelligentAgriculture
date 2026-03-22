@@ -32,21 +32,21 @@ public class DeviceTools {
         return deviceService.getDevicesByPointId(pointId);
     }
 
-    @Tool("根据设备ID获取设备的详细信息")
-    public DeviceDTO getDeviceByDeviceId(String deviceId) {
-        log.info("[AI Tool] 获取设备 {} 的详细信息", deviceId);
-        return deviceService.getDeviceByDeviceId(deviceId);
+    @Tool("根据设备编码获取设备的详细信息")
+    public DeviceDTO getDeviceByDeviceCode(String deviceCode) {
+        log.info("[AI Tool] 获取设备 {} 的详细信息", deviceCode);
+        return deviceService.getDeviceByDeviceCode(deviceCode);
     }
 
     @Tool("控制设备开关。command参数为'on'开启设备，'off'关闭设备")
-    public DeviceDTO controlDevice(String deviceId, String command) {
-        log.info("[AI Tool] 控制设备 {} 执行命令: {}", deviceId, command);
-        return deviceService.controlDevice(deviceId, command);
+    public DeviceDTO controlDevice(String deviceCode, String command) {
+        log.info("[AI Tool] 控制设备 {} 执行命令: {}", deviceCode, command);
+        return deviceService.controlDevice(deviceCode, command);
     }
 
     @Tool("更新设备状态。status: 0-离线, 1-在线, 2-工作中")
-    public DeviceDTO updateDeviceStatus(String deviceId, Integer status) {
-        log.info("[AI Tool] 更新设备 {} 状态为: {}", deviceId, status);
-        return deviceService.updateDeviceStatus(deviceId, status);
+    public DeviceDTO updateDeviceStatus(String deviceCode, Integer status) {
+        log.info("[AI Tool] 更新设备 {} 状态为: {}", deviceCode, status);
+        return deviceService.updateDeviceStatus(deviceCode, status);
     }
 }
