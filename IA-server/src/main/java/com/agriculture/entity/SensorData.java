@@ -6,7 +6,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 环境数据实体
+ * 传感器数据实体
  */
 @Data
 @TableName("sensor_data")
@@ -32,6 +32,15 @@ public class SensorData {
 
     @TableField("soil_moisture")
     private BigDecimal soilMoisture;
+
+    @TableField("soil_temperature")
+    private BigDecimal soilTemperature;
+
+    @TableField("soil_ph")
+    private BigDecimal soilPh;
+
+    @TableField("soil_ec")
+    private BigDecimal soilEc;
 
     @TableField("recorded_at")
     private LocalDateTime recordedAt;

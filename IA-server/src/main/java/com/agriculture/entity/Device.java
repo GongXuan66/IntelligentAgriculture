@@ -17,8 +17,8 @@ public class Device {
     @TableField("point_id")
     private Long pointId;
 
-    @TableField("device_id")
-    private String deviceId;
+    @TableField("device_code")
+    private String deviceCode;
 
     @TableField("device_name")
     private String deviceName;
@@ -26,8 +26,20 @@ public class Device {
     @TableField("device_type")
     private String deviceType;
 
+    @TableField("device_model")
+    private String deviceModel;
+
+    @TableField("manufacturer")
+    private String manufacturer;
+
     @TableField("status")
     private Integer status = 0;
+
+    @TableField("last_heartbeat")
+    private LocalDateTime lastHeartbeat;
+
+    @TableField("installed_at")
+    private LocalDateTime installedAt;
 
     @TableField(value = "created_at", fill = FieldFill.INSERT)
     private LocalDateTime createdAt;

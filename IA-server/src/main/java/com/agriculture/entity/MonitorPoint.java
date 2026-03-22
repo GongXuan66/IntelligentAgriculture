@@ -2,10 +2,11 @@ package com.agriculture.entity;
 
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 检测点实体
+ * 检测点/地块实体
  */
 @Data
 @TableName("monitor_point")
@@ -14,11 +15,11 @@ public class MonitorPoint {
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    @TableField("field_id")
-    private Long fieldId;
+    @TableField("farm_id")
+    private Long farmId;
 
-    @TableField("point_id")
-    private String pointId;
+    @TableField("point_code")
+    private String pointCode;
 
     @TableField("point_name")
     private String pointName;
@@ -26,8 +27,11 @@ public class MonitorPoint {
     @TableField("location")
     private String location;
 
-    @TableField("crop_type")
-    private String cropType;
+    @TableField("area")
+    private BigDecimal area;
+
+    @TableField("soil_type")
+    private String soilType;
 
     @TableField("status")
     private Integer status = 1;

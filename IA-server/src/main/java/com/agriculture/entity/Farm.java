@@ -6,32 +6,35 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 地块实体
+ * 农场实体
  */
 @Data
-@TableName("field")
-public class Field {
+@TableName("farm")
+public class Farm {
 
     @TableId(type = IdType.AUTO)
     private Long id;
 
-    @TableField("field_id")
-    private String fieldId;
+    @TableField("user_id")
+    private Long userId;
 
-    @TableField("field_name")
-    private String fieldName;
+    @TableField("farm_name")
+    private String farmName;
 
-    @TableField("field_type")
-    private String fieldType;
+    @TableField("farm_code")
+    private String farmCode;
 
     @TableField("location")
     private String location;
 
+    @TableField("province")
+    private String province;
+
+    @TableField("city")
+    private String city;
+
     @TableField("area")
     private BigDecimal area;
-
-    @TableField("crop_type")
-    private String cropType;
 
     @TableField("description")
     private String description;

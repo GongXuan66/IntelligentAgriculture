@@ -27,6 +27,42 @@ public class IrrigationLog {
     @TableField("mode")
     private Integer mode = 0;
 
+    @TableField("decision_type")
+    private String decisionType;
+
+    @TableField("current_moisture")
+    private BigDecimal currentMoisture;
+
+    @TableField("predicted_moisture")
+    private BigDecimal predictedMoisture;
+
+    @TableField("prediction_hours")
+    private Integer predictionHours;
+
+    @TableField("crop_stage")
+    private String cropStage;
+
+    @TableField("irrigation_factor")
+    private BigDecimal irrigationFactor;
+
+    @TableField("confidence")
+    private BigDecimal confidence;
+
+    @TableField("soil_moisture_before")
+    private BigDecimal soilMoistureBefore;
+
+    @TableField("soil_moisture_after")
+    private BigDecimal soilMoistureAfter;
+
+    @TableField("temperature")
+    private BigDecimal temperature;
+
+    @TableField("humidity")
+    private BigDecimal humidity;
+
+    @TableField("trigger_reason")
+    private String triggerReason;
+
     @TableField("start_time")
     private LocalDateTime startTime;
 

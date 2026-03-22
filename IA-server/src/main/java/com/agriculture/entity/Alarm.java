@@ -21,18 +21,30 @@ public class Alarm {
     @TableField("alarm_type")
     private String alarmType;
 
+    @TableField("alarm_level")
+    private Integer alarmLevel = 1;
+
     @TableField("alarm_value")
     private BigDecimal alarmValue;
 
     @TableField("threshold")
     private BigDecimal threshold;
 
+    @TableField("message")
+    private String message;
+
     @TableField("status")
     private Integer status = 0;
 
-    @TableField(value = "created_at", fill = FieldFill.INSERT)
-    private LocalDateTime createdAt;
+    @TableField("handled_by")
+    private Long handledBy;
 
     @TableField("handled_at")
     private LocalDateTime handledAt;
+
+    @TableField("handle_note")
+    private String handleNote;
+
+    @TableField(value = "created_at", fill = FieldFill.INSERT)
+    private LocalDateTime createdAt;
 }

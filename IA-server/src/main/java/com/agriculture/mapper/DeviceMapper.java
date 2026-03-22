@@ -19,9 +19,9 @@ public interface DeviceMapper extends BaseMapper<Device> {
     @Select("SELECT * FROM device WHERE point_id = #{pointId} AND status = #{status}")
     List<Device> findByPointIdAndStatus(Long pointId, Integer status);
 
-    @Select("SELECT * FROM device WHERE device_id = #{deviceId}")
-    Device findByDeviceId(String deviceId);
+    @Select("SELECT * FROM device WHERE device_code = #{deviceCode}")
+    Device findByDeviceCode(String deviceCode);
 
-    @Select("SELECT COUNT(*) > 0 FROM device WHERE device_id = #{deviceId}")
-    boolean existsByDeviceId(String deviceId);
+    @Select("SELECT COUNT(*) > 0 FROM device WHERE device_code = #{deviceCode}")
+    boolean existsByDeviceCode(String deviceCode);
 }
