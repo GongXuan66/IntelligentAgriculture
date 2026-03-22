@@ -2,6 +2,7 @@ package com.agriculture.model.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -11,38 +12,41 @@ import java.time.LocalDateTime;
 public class MonitorPointDTO {
 
     private Long id;
-    private Long fieldId;
-    private String pointId;
+    private Long farmId;
+    private String pointCode;
     private String pointName;
     private String location;
-    private String cropType;
+    private BigDecimal area;
+    private String soilType;
     private Integer status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     
-    // 关联的地块名称（用于显示）
-    private String fieldName;
+    // 关联的农场名称（用于显示）
+    private String farmName;
 
     @Data
     public static class CreateRequest {
-        private Long fieldId;
+        private Long farmId;
 
-        @NotBlank(message = "检测点ID不能为空")
-        private String pointId;
+        private String pointCode;
 
         @NotBlank(message = "检测点名称不能为空")
         private String pointName;
 
         private String location;
-        private String cropType;
+        private BigDecimal area;
+        private String soilType;
     }
 
     @Data
     public static class UpdateRequest {
-        private Long fieldId;
+        private Long farmId;
+        private String pointCode;
         private String pointName;
         private String location;
-        private String cropType;
+        private BigDecimal area;
+        private String soilType;
         private Integer status;
     }
 }

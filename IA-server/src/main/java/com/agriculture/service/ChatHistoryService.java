@@ -1,7 +1,7 @@
 package com.agriculture.service;
 
-import com.agriculture.entity.ChatHistory;
-import com.agriculture.mapper.ChatHistoryMapper;
+import com.agriculture.entity.AiInteraction;
+import com.agriculture.mapper.AiInteractionMapper;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +16,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class ChatHistoryService {
 
-    private final ChatHistoryMapper chatHistoryMapper;
+    private final AiInteractionMapper aiInteractionMapper;
+    private static final String TYPE_CHAT = "chat";
 
     /**
      * 保存用户消息
@@ -44,46 +45,53 @@ public class ChatHistoryService {
      * 保存消息
      */
     private void saveMessage(String sessionId, String role, String content) {
-        ChatHistory history = new ChatHistory();
+        AiInteraction history = new AiInteraction();
         history.setSessionId(sessionId);
         history.setRole(role);
         history.setContent(content);
-        chatHistoryMapper.insert(history);
+        history.setInteractionType(TYPE_CHAT);
+        aiInteractionMapper.insert(history);
         log.debug("保存对话历史: sessionId={}, role={}", sessionId, role);
     }
 
     /**
      * 获取会话的完整历史
      */
-    public List<ChatHistory> getHistoryBySessionId(String sessionId) {
-        return chatHistoryMapper.findBySessionIdOrderByCreatedAtAsc(sessionId);
+    public List<AiInteraction> getHistoryBySessionId(String sessionId) {
+        return aiInteractionMapper.findBySessionId(sessionId);
     }
 
     /**
      * 分页获取会话历史
      */
-    public Page<ChatHistory> getHistoryPaged(String sessionId, int pageNum, int pageSize) {
-        Page<ChatHistory> page = new Page<>(pageNum + 1, pageSize);
-        LambdaQueryWrapper<ChatHistory> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ChatHistory::getSessionId, sessionId)
-                .orderByAsc(ChatHistory::getCreatedAt);
-        return chatHistoryMapper.selectPage(page, wrapper);
+    public Page<AiInteraction> getHistoryPaged(String sessionId, int pageNum, int pageSize) {
+        Page<AiInteraction> page = new Page<>(pageNum + 1, pageSize);
+        LambdaQueryWrapper<AiInteraction> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AiInteraction::getSessionId, sessionId)
+                .eq(AiInteraction::getInteractionType, TYPE_CHAT)
+                .orderByAsc(AiInteraction::getCreatedAt);
+        return aiInteractionMapper.selectPage(page, wrapper);
     }
 
     /**
      * 获取最近N条历史
      */
-    public List<ChatHistory> getRecentHistory(String sessionId, int limit) {
-        return chatHistoryMapper.findRecentBySessionId(sessionId, limit);
+    public List<AiInteraction> getRecentHistory(String sessionId, int limit) {
+        LambdaQueryWrapper<AiInteraction> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AiInteraction::getSessionId, sessionId)
+                .eq(AiInteraction::getInteractionType, TYPE_CHAT)
+                .orderByDesc(AiInteraction::getCreatedAt)
+                .last("LIMIT " + limit);
+        return aiInteractionMapper.selectList(wrapper);
     }
 
     /**
      * 删除会话的所有历史
      */
     public void deleteBySessionId(String sessionId) {
-        LambdaQueryWrapper<ChatHistory> wrapper = new LambdaQueryWrapper<>();
-        wrapper.eq(ChatHistory::getSessionId, sessionId);
-        chatHistoryMapper.delete(wrapper);
+        LambdaQueryWrapper<AiInteraction> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AiInteraction::getSessionId, sessionId);
+        aiInteractionMapper.delete(wrapper);
         log.info("删除会话历史: sessionId={}", sessionId);
     }
 
@@ -91,6 +99,9 @@ public class ChatHistoryService {
      * 统计会话消息数
      */
     public Long countBySessionId(String sessionId) {
-        return chatHistoryMapper.countBySessionId(sessionId);
+        LambdaQueryWrapper<AiInteraction> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(AiInteraction::getSessionId, sessionId)
+                .eq(AiInteraction::getInteractionType, TYPE_CHAT);
+        return aiInteractionMapper.selectCount(wrapper);
     }
 }

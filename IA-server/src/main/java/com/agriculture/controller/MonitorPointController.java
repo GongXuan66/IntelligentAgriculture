@@ -27,10 +27,10 @@ public class MonitorPointController {
     @GetMapping("/list")
     public ApiResponse<List<MonitorPointDTO>> getPointList(
             @RequestParam(required = false, defaultValue = "false") boolean activeOnly,
-            @RequestParam(required = false) Long fieldId) {
+            @RequestParam(required = false) Long farmId) {
         List<MonitorPointDTO> points;
-        if (fieldId != null) {
-            points = monitorPointService.getPointsByFieldId(fieldId);
+        if (farmId != null) {
+            points = monitorPointService.getPointsByFarmId(farmId);
         } else if (activeOnly) {
             points = monitorPointService.getActivePoints();
         } else {

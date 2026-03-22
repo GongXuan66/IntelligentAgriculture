@@ -51,9 +51,9 @@ public class DeviceController {
     /**
      * 获取设备状态
      */
-    @GetMapping("/{deviceId}/status")
-    public ApiResponse<DeviceDTO> getDeviceStatus(@PathVariable String deviceId) {
-        DeviceDTO device = deviceService.getDeviceByDeviceId(deviceId);
+    @GetMapping("/{deviceCode}/status")
+    public ApiResponse<DeviceDTO> getDeviceStatus(@PathVariable String deviceCode) {
+        DeviceDTO device = deviceService.getDeviceByDeviceCode(deviceCode);
         if (device == null) {
             return ApiResponse.error("设备不存在");
         }
@@ -66,7 +66,7 @@ public class DeviceController {
     @PostMapping("/control")
     public ApiResponse<DeviceDTO> controlDevice(@Valid @RequestBody DeviceDTO.ControlRequest request) {
         try {
-            DeviceDTO device = deviceService.controlDevice(request.getDeviceId(), request.getCommand());
+            DeviceDTO device = deviceService.controlDevice(request.getDeviceCode(), request.getCommand());
             return ApiResponse.success("控制成功", device);
         } catch (RuntimeException e) {
             return ApiResponse.error(e.getMessage());

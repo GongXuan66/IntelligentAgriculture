@@ -130,10 +130,9 @@ public class TestController {
         // 创建检测点
         if (monitorPointService.getAllPoints().isEmpty()) {
             MonitorPointDTO.CreateRequest pointRequest = new MonitorPointDTO.CreateRequest();
-            pointRequest.setPointId("POINT_001");
+            pointRequest.setPointCode("POINT_001");
             pointRequest.setPointName("1号大棚");
             pointRequest.setLocation("东区");
-            pointRequest.setCropType("番茄");
             result.put("point", monitorPointService.createPoint(pointRequest));
         }
 
@@ -149,7 +148,7 @@ public class TestController {
             for (String[] d : devices) {
                 DeviceDTO.CreateRequest deviceRequest = new DeviceDTO.CreateRequest();
                 deviceRequest.setPointId(1L);
-                deviceRequest.setDeviceId(d[0]);
+                deviceRequest.setDeviceCode(d[0]);
                 deviceRequest.setDeviceName(d[1]);
                 deviceRequest.setDeviceType(d[2]);
                 deviceService.createDevice(deviceRequest);

@@ -12,10 +12,14 @@ public class DeviceDTO {
 
     private Long id;
     private Long pointId;
-    private String deviceId;
+    private String deviceCode;
     private String deviceName;
     private String deviceType;
+    private String deviceModel;
+    private String manufacturer;
     private Integer status;
+    private LocalDateTime lastHeartbeat;
+    private LocalDateTime installedAt;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 
@@ -24,20 +28,23 @@ public class DeviceDTO {
         @NotBlank(message = "检测点ID不能为空")
         private Long pointId;
 
-        @NotBlank(message = "设备ID不能为空")
-        private String deviceId;
+        @NotBlank(message = "设备编码不能为空")
+        private String deviceCode;
 
         @NotBlank(message = "设备名称不能为空")
         private String deviceName;
 
         @NotBlank(message = "设备类型不能为空")
         private String deviceType;
+
+        private String deviceModel;
+        private String manufacturer;
     }
 
     @Data
     public static class ControlRequest {
-        @NotBlank(message = "设备ID不能为空")
-        private String deviceId;
+        @NotBlank(message = "设备编码不能为空")
+        private String deviceCode;
 
         @NotBlank(message = "命令不能为空")
         private String command;

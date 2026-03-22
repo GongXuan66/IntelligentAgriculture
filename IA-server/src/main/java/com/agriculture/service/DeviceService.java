@@ -35,22 +35,24 @@ public class DeviceService {
         return device != null ? toDTO(device) : null;
     }
 
-    public DeviceDTO getDeviceByDeviceId(String deviceId) {
-        Device device = deviceMapper.findByDeviceId(deviceId);
+    public DeviceDTO getDeviceByDeviceCode(String deviceCode) {
+        Device device = deviceMapper.findByDeviceCode(deviceCode);
         return device != null ? toDTO(device) : null;
     }
 
     @Transactional
     public DeviceDTO createDevice(DeviceDTO.CreateRequest request) {
-        if (deviceMapper.existsByDeviceId(request.getDeviceId())) {
-            throw new RuntimeException("设备ID已存在: " + request.getDeviceId());
+        if (deviceMapper.existsByDeviceCode(request.getDeviceCode())) {
+            throw new RuntimeException("设备编码已存在: " + request.getDeviceCode());
         }
 
         Device device = new Device();
         device.setPointId(request.getPointId());
-        device.setDeviceId(request.getDeviceId());
+        device.setDeviceCode(request.getDeviceCode());
         device.setDeviceName(request.getDeviceName());
         device.setDeviceType(request.getDeviceType());
+        device.setDeviceModel(request.getDeviceModel());
+        device.setManufacturer(request.getManufacturer());
         device.setStatus(0);
 
         deviceMapper.insert(device);
@@ -58,10 +60,10 @@ public class DeviceService {
     }
 
     @Transactional
-    public DeviceDTO updateDeviceStatus(String deviceId, Integer status) {
-        Device device = deviceMapper.findByDeviceId(deviceId);
+    public DeviceDTO updateDeviceStatus(String deviceCode, Integer status) {
+        Device device = deviceMapper.findByDeviceCode(deviceCode);
         if (device == null) {
-            throw new RuntimeException("设备不存在: " + deviceId);
+            throw new RuntimeException("设备不存在: " + deviceCode);
         }
 
         device.setStatus(status);
@@ -70,10 +72,10 @@ public class DeviceService {
     }
 
     @Transactional
-    public DeviceDTO controlDevice(String deviceId, String command) {
-        Device device = deviceMapper.findByDeviceId(deviceId);
+    public DeviceDTO controlDevice(String deviceCode, String command) {
+        Device device = deviceMapper.findByDeviceCode(deviceCode);
         if (device == null) {
-            throw new RuntimeException("设备不存在: " + deviceId);
+            throw new RuntimeException("设备不存在: " + deviceCode);
         }
 
         // 根据命令更新设备状态
@@ -82,11 +84,11 @@ public class DeviceService {
         switch (command.toLowerCase()) {
             case "on":
                 device.setStatus(2); // 工作中
-                log.info("设备 {} 开启", deviceId);
+                log.info("设备 {} 开启", deviceCode);
                 break;
             case "off":
                 device.setStatus(1); // 在线
-                log.info("设备 {} 关闭", deviceId);
+                log.info("设备 {} 关闭", deviceCode);
                 break;
             default:
                 log.warn("未知命令: {}", command);
@@ -105,10 +107,14 @@ public class DeviceService {
         DeviceDTO dto = new DeviceDTO();
         dto.setId(device.getId());
         dto.setPointId(device.getPointId());
-        dto.setDeviceId(device.getDeviceId());
+        dto.setDeviceCode(device.getDeviceCode());
         dto.setDeviceName(device.getDeviceName());
         dto.setDeviceType(device.getDeviceType());
+        dto.setDeviceModel(device.getDeviceModel());
+        dto.setManufacturer(device.getManufacturer());
         dto.setStatus(device.getStatus());
+        dto.setLastHeartbeat(device.getLastHeartbeat());
+        dto.setInstalledAt(device.getInstalledAt());
         dto.setCreatedAt(device.getCreatedAt());
         dto.setUpdatedAt(device.getUpdatedAt());
         return dto;

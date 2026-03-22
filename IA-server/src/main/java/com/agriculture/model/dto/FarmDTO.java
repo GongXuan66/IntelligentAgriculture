@@ -7,18 +7,19 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 /**
- * 地块DTO
+ * 农场DTO
  */
 @Data
-public class FieldDTO {
+public class FarmDTO {
 
     private Long id;
-    private String fieldId;
-    private String fieldName;
-    private String fieldType;
+    private Long userId;
+    private String farmName;
+    private String farmCode;
     private String location;
+    private String province;
+    private String city;
     private BigDecimal area;
-    private String cropType;
     private String description;
     private Integer status;
     private LocalDateTime createdAt;
@@ -29,36 +30,36 @@ public class FieldDTO {
 
     @Data
     public static class CreateRequest {
-        @NotBlank(message = "地块编号不能为空")
-        private String fieldId;
+        private Long userId;
 
-        @NotBlank(message = "地块名称不能为空")
-        private String fieldName;
+        @NotBlank(message = "农场名称不能为空")
+        private String farmName;
 
-        private String fieldType;
+        private String farmCode;
         private String location;
+        private String province;
+        private String city;
         private BigDecimal area;
-        private String cropType;
         private String description;
     }
 
     @Data
     public static class UpdateRequest {
-        private String fieldName;
-        private String fieldType;
+        private String farmName;
         private String location;
+        private String province;
+        private String city;
         private BigDecimal area;
-        private String cropType;
         private String description;
         private Integer status;
     }
     
     /**
-     * 地块详情（含检测点列表）
+     * 农场详情（含检测点列表）
      */
     @Data
     public static class DetailResponse {
-        private FieldDTO field;
+        private FarmDTO farm;
         private List<MonitorPointDTO> points;
     }
 }
