@@ -142,4 +142,45 @@ export class HttpClient {
       throw new Error(`HTTP错误: ${response.responseCode}`)
     }
   }
+
+  /**
+   * DELETE请求
+   */
+  static async delete<T>(url: string): Promise<T> {
+    let httpRequest = http.createHttp()
+    let fullUrl = `${HttpConfig.BASE_URL}${url}`
+    console.info(`[HttpClient] DELETE请求: ${fullUrl}`)
+    
+    let response: http.HttpResponse
+    try {
+      response = await httpRequest.request(
+        fullUrl,
+        {
+          method: http.RequestMethod.DELETE,
+          connectTimeout: HttpConfig.TIMEOUT,
+          readTimeout: HttpConfig.TIMEOUT,
+          header: {
+            'Content-Type': 'application/json'
+          }
+        }
+      )
+    } catch (err) {
+      httpRequest.destroy()
+      let errorMsg = err instanceof Error ? err.message : String(err)
+      console.error(`[HttpClient] 网络请求失败: ${errorMsg}`)
+      throw new Error(`网络请求失败: ${errorMsg}`)
+    }
+    
+    httpRequest.destroy()
+    console.info(`[HttpClient] 响应码: ${response.responseCode}`)
+    
+    if (response.responseCode === 200) {
+      let result: T = JSON.parse(response.result as string) as T
+      console.info(`[HttpClient] 请求成功`)
+      return result
+    } else {
+      console.error(`[HttpClient] HTTP错误: ${response.responseCode}`)
+      throw new Error(`HTTP错误: ${response.responseCode}`)
+    }
+  }
 }

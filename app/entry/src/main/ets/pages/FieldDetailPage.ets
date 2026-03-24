@@ -1,19 +1,20 @@
 import router from '@ohos.router'
 import { EnvironmentData } from '../models/EnvironmentData'
-import { Field, MonitorPoint } from '../models/Field'
+import { Farm, MonitorPoint } from '../models/Farm'
 import { SensorService } from '../services/SensorService'
 import { AlarmService } from '../services/AlarmService'
 import { IrrigationService } from '../services/IrrigationService'
 import { DeviceService } from '../services/DeviceService'
-import { FieldService } from '../services/FieldService'
+import { FarmService } from '../services/FarmService'
 import { AppState } from '../config/AppState'
 import { DeviceStatus } from '../models/Device'
 import { AppConfig } from '../config/AppConfig'
 import { DataCard } from '../components/DataCard'
 
 /**
- * 地块详情页 - 环境监测
- * 从首页点击地块卡片进入
+ * 农场详情页 - 环境监测
+ * 从首页点击农场卡片进入
+ * 注：由 FieldDetailPage 重命名为 FarmDetailPage
  */
 @Entry
 @Component
@@ -26,21 +27,21 @@ struct FieldDetailPage {
   @State onlineCount: number = 0
   @State workingCount: number = 0
   
-  // 当前地块和检测点
-  @State currentField: Field | null = null
+  // 当前农场和检测点
+  @State currentFarm: Farm | null = null
   @State currentPoint: MonitorPoint | null = null
   @State points: MonitorPoint[] = []
   @State showPointPicker: boolean = false
   
   // 路由参数
-  private fieldId: number = 0
-  private fieldName: string = ''
+  private farmId: number = 0
+  private farmName: string = ''
   
   private sensorService: SensorService = new SensorService()
   private alarmService: AlarmService = AlarmService.getInstance()
   private irrigationService: IrrigationService = new IrrigationService()
   private deviceService: DeviceService = new DeviceService()
-  private fieldService: FieldService = new FieldService()
+  private farmService: FarmService = new FarmService()
   private appState: AppState = AppState.getInstance()
   private appConfig: AppConfig = AppConfig.getInstance()
   private refreshInterval: number = -1
@@ -49,19 +50,19 @@ struct FieldDetailPage {
     // 获取路由参数
     const params = router.getParams() as Record<string, Object>
     if (params) {
-      this.fieldId = params['fieldId'] as number || 0
-      this.fieldName = params['fieldName'] as string || ''
+      this.farmId = params['farmId'] as number || params['fieldId'] as number || 0
+      this.farmName = params['farmName'] as string || params['fieldName'] as string || ''
     }
     
     // 如果没有参数，尝试从全局状态获取
-    if (!this.fieldId && this.appState.currentField) {
-      this.currentField = this.appState.currentField
-      this.fieldId = this.currentField.id!
+    if (!this.farmId && this.appState.currentFarm) {
+      this.currentFarm = this.appState.currentFarm
+      this.farmId = this.currentFarm.id!
     }
     
     await this.loadLocalConfig()
     this.isSimulationMode = this.appConfig.simulationMode
-    await this.loadFieldData()
+    await this.loadFarmData()
     this.loadData()
     this.refreshInterval = setInterval(() => {
       this.loadData()
@@ -69,14 +70,14 @@ struct FieldDetailPage {
   }
   
   /**
-   * 加载地块数据
+   * 加载农场数据
    */
-  async loadFieldData() {
-    if (this.fieldId) {
-      // 从后端获取地块详情
-      const detail = await this.fieldService.getFieldDetail(this.fieldId)
+  async loadFarmData() {
+    if (this.farmId) {
+      // 从后端获取农场详情
+      const detail = await this.farmService.getFarmDetail(this.farmId)
       if (detail) {
-        this.currentField = detail.field
+        this.currentFarm = detail.farm
         this.points = detail.points || []
         
         if (this.points.length > 0) {
@@ -91,9 +92,9 @@ struct FieldDetailPage {
     try {
       await this.alarmService.loadConfigFromStorage()
       await this.irrigationService.loadConfigFromStorage()
-      console.log('[FieldDetailPage] 本地配置加载完成')
+      console.log('[FarmDetailPage] 本地配置加载完成')
     } catch (error) {
-      console.error('[FieldDetailPage] 加载本地配置失败:', error)
+      console.error('[FarmDetailPage] 加载本地配置失败:', error)
     }
   }
 
@@ -191,15 +192,15 @@ struct FieldDetailPage {
           router.back()
         })
         
-        // 地块名称
+        // 农场名称
         Column() {
-          Text(this.currentField?.fieldName || this.fieldName || '地块详情')
+          Text(this.currentFarm?.farmName || this.farmName || '农场详情')
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
             .fontColor(Color.White)
           
-          if (this.currentField?.cropType) {
-            Text(`🌾 ${this.currentField.cropType}`)
+          if (this.currentFarm?.location) {
+            Text(`📍 ${this.currentFarm.location}`)
               .fontSize(12)
               .fontColor('rgba(255,255,255,0.8)')
               .margin({ top: 2 })

@@ -1,20 +1,38 @@
-import { Field, MonitorPoint } from '../models/Field'
+import { Farm, MonitorPoint } from '../models/Farm'
 
 /**
  * 全局应用状态
- * 管理当前选中的地块和检测点
+ * 管理当前选中的农场和检测点
  */
 export class AppState {
   private static instance: AppState
   
-  // 当前选中的地块
-  currentField: Field | null = null
+  // 当前选中的农场
+  currentFarm: Farm | null = null
+  
+  // 兼容旧版：currentField 别名
+  get currentField(): Farm | null {
+    return this.currentFarm
+  }
+  
+  set currentField(value: Farm | null) {
+    this.currentFarm = value
+  }
   
   // 当前选中的检测点
   currentPoint: MonitorPoint | null = null
   
-  // 地块列表
-  fields: Field[] = []
+  // 农场列表
+  farms: Farm[] = []
+  
+  // 兼容旧版：fields 别名
+  get fields(): Farm[] {
+    return this.farms
+  }
+  
+  set fields(value: Farm[]) {
+    this.farms = value
+  }
   
   // 检测点列表
   points: MonitorPoint[] = []
@@ -30,13 +48,20 @@ export class AppState {
   }
 
   /**
-   * 设置当前地块
+   * 设置当前农场
    */
-  setCurrentField(field: Field | null): void {
-    this.currentField = field
-    // 切换地块时清空检测点
+  setCurrentFarm(farm: Farm | null): void {
+    this.currentFarm = farm
+    // 切换农场时清空检测点
     this.currentPoint = null
     this.points = []
+  }
+
+  /**
+   * 兼容旧版：设置当前地块
+   */
+  setCurrentField(field: Farm | null): void {
+    this.setCurrentFarm(field)
   }
 
   /**
@@ -50,17 +75,24 @@ export class AppState {
   }
 
   /**
-   * 设置地块列表
+   * 设置农场列表
    */
-  setFields(fields: Field[]): void {
-    this.fields = fields
-    // 默认选中第一个启用的地块
-    if (!this.currentField && fields.length > 0) {
-      const activeFields = fields.filter(f => f.status === 1 || f.status === undefined)
-      if (activeFields.length > 0) {
-        this.currentField = activeFields[0]
+  setFarms(farms: Farm[]): void {
+    this.farms = farms
+    // 默认选中第一个启用的农场
+    if (!this.currentFarm && farms.length > 0) {
+      const activeFarms = farms.filter(f => f.status === 1 || f.status === undefined)
+      if (activeFarms.length > 0) {
+        this.currentFarm = activeFarms[0]
       }
     }
+  }
+
+  /**
+   * 兼容旧版：设置地块列表
+   */
+  setFields(fields: Farm[]): void {
+    this.setFarms(fields)
   }
 
   /**
@@ -84,11 +116,11 @@ export class AppState {
    * 获取当前显示名称
    */
   getDisplayName(): string {
-    if (this.currentField && this.currentPoint) {
-      return `${this.currentField.fieldName} - ${this.currentPoint.pointName}`
-    } else if (this.currentField) {
-      return this.currentField.fieldName
+    if (this.currentFarm && this.currentPoint) {
+      return `${this.currentFarm.farmName} - ${this.currentPoint.pointName}`
+    } else if (this.currentFarm) {
+      return this.currentFarm.farmName
     }
-    return '选择地块'
+    return '选择农场'
   }
 }

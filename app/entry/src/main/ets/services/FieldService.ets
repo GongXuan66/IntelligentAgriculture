@@ -1,4 +1,5 @@
-import { Field, MonitorPoint } from '../models/Field'
+import { Farm, MonitorPoint } from '../models/Farm'
+import { FarmService, FarmDetail } from './FarmService'
 import { HttpClient } from '../web/HttpClient'
 
 /**
@@ -11,77 +12,53 @@ interface ApiResponse<T> {
 }
 
 /**
- * 地块服务
+ * 兼容旧版：Field 类型别名
+ * 注：推荐使用 Farm 类型
+ */
+export type Field = Farm
+
+/**
+ * 兼容旧版：FieldDetail 类型别名
+ * 注：推荐使用 FarmDetail 类型
+ */
+export type FieldDetail = FarmDetail
+
+/**
+ * 地块服务（兼容层）
+ * 注：推荐直接使用 FarmService
+ * 此类保留用于向后兼容，内部委托给 FarmService
  */
 export class FieldService {
+  private farmService: FarmService = new FarmService()
   
   /**
    * 获取所有地块列表
+   * @deprecated 请使用 farmService.getFarmList()
    */
   async getFieldList(activeOnly: boolean = true): Promise<Field[]> {
-    try {
-      let result = await HttpClient.get<ApiResponse<Field[]>>(
-        `/api/field/list?activeOnly=${activeOnly}`
-      )
-      return result.data || []
-    } catch (error) {
-      console.error('获取地块列表失败:', error)
-      return []
-    }
+    return this.farmService.getFarmList(activeOnly)
   }
 
   /**
    * 获取地块详情（含检测点）
+   * @deprecated 请使用 farmService.getFarmDetail()
    */
   async getFieldDetail(id: number): Promise<FieldDetail | null> {
-    try {
-      let result = await HttpClient.get<ApiResponse<FieldDetail>>(
-        `/api/field/${id}`
-      )
-      return result.data || null
-    } catch (error) {
-      console.error('获取地块详情失败:', error)
-      return null
-    }
+    return this.farmService.getFarmDetail(id)
   }
 
   /**
    * 获取地块下的检测点列表
+   * @deprecated 请使用 farmService.getFarmPoints()
    */
-  async getFieldPoints(fieldId: number): Promise<MonitorPoint[]> {
-    try {
-      let result = await HttpClient.get<ApiResponse<MonitorPoint[]>>(
-        `/api/field/${fieldId}/points`
-      )
-      return result.data || []
-    } catch (error) {
-      console.error('获取检测点列表失败:', error)
-      return []
-    }
+  async getFieldPoints(farmId: number): Promise<MonitorPoint[]> {
+    return this.farmService.getFarmPoints(farmId)
   }
 
   /**
    * 获取检测点列表
    */
-  async getPointList(fieldId?: number, activeOnly: boolean = true): Promise<MonitorPoint[]> {
-    try {
-      let url = `/api/point/list?activeOnly=${activeOnly}`
-      if (fieldId !== undefined) {
-        url += `&fieldId=${fieldId}`
-      }
-      let result = await HttpClient.get<ApiResponse<MonitorPoint[]>>(url)
-      return result.data || []
-    } catch (error) {
-      console.error('获取检测点列表失败:', error)
-      return []
-    }
+  async getPointList(farmId?: number, activeOnly: boolean = true): Promise<MonitorPoint[]> {
+    return this.farmService.getPointList(farmId, activeOnly)
   }
-}
-
-/**
- * 地块详情（含检测点）
- */
-export interface FieldDetail {
-  field: Field
-  points: MonitorPoint[]
 }

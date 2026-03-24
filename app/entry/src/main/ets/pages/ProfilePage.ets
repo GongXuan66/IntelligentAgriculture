@@ -1,8 +1,8 @@
 import { NavBottom } from '../components/NavBottom'
 import { AppConfig } from '../config/AppConfig'
 import { AppState } from '../config/AppState'
-import { Field } from '../models/Field'
-import { FieldService } from '../services/FieldService'
+import { Farm } from '../models/Farm'
+import { FarmService } from '../services/FarmService'
 import { DeviceService } from '../services/DeviceService'
 import { AlarmService } from '../services/AlarmService'
 import router from '@ohos.router'
@@ -23,7 +23,7 @@ struct ProfilePage {
   
   private readonly appConfig: AppConfig = AppConfig.getInstance()
   private readonly appState: AppState = AppState.getInstance()
-  private readonly fieldService: FieldService = new FieldService()
+  private readonly farmService: FarmService = new FarmService()
   private readonly deviceService: DeviceService = new DeviceService()
   private readonly alarmService: AlarmService = AlarmService.getInstance()
 
@@ -34,13 +34,13 @@ struct ProfilePage {
 
   async loadStats() {
     try {
-      // 获取地块统计
-      const fields = await this.fieldService.getFieldList(true)
-      this.fieldCount = fields.length
+      // 获取农场统计
+      const farms = await this.farmService.getFarmList(true)
+      this.fieldCount = farms.length
       
       let totalPoints = 0
-      for (const field of fields) {
-        const detail = await this.fieldService.getFieldDetail(field.id!)
+      for (const farm of farms) {
+        const detail = await this.farmService.getFarmDetail(farm.id!)
         if (detail && detail.points) {
           totalPoints += detail.points.length
         }

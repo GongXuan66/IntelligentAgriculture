@@ -1,7 +1,7 @@
 import router from '@ohos.router'
-import { Field, FieldTypeNames, MonitorPoint } from '../models/Field'
+import { Farm, FarmTypeNames, MonitorPoint } from '../models/Farm'
 import { EnvironmentData } from '../models/EnvironmentData'
-import { FieldService } from '../services/FieldService'
+import { FarmService } from '../services/FarmService'
 import { SensorService } from '../services/SensorService'
 import { DeviceService } from '../services/DeviceService'
 import { AlarmService } from '../services/AlarmService'
@@ -12,11 +12,11 @@ import { AppState } from '../config/AppState'
 import { NavBottom } from '../components/NavBottom'
 import { Device, DeviceStatus } from '../models/Device'
 
-class FieldWithEnv {
+class FarmWithEnv {
   id: number = 0
-  fieldId: string = ''
-  fieldName: string = ''
-  fieldType: string = 'outdoor'
+  farmId: string = ''
+  farmName: string = ''
+  farmType: string = 'outdoor'
   location: string = ''
   area: number = 0
   cropType: string = ''
@@ -28,16 +28,16 @@ class FieldWithEnv {
 }
 
 /**
- * 首页 - 农田页面
- * 地块总览和快捷操作入口
+ * 首页 - 农场页面
+ * 农场总览和快捷操作入口
  */
 @Entry
 @Component
 struct Index {
-  @State fields: FieldWithEnv[] = []
+  @State farms: FarmWithEnv[] = []
   @State isLoading: boolean = true
   @State isSimulationMode: boolean = false
-  @State totalFields: number = 0
+  @State totalFarms: number = 0
   @State totalPoints: number = 0
   @State totalAlarms: number = 0
   @State totalDevices: number = 0
@@ -45,7 +45,7 @@ struct Index {
   @State weatherError: string = ''
   @State weatherLoading: boolean = true
   
-  private fieldService: FieldService = new FieldService()
+  private farmService: FarmService = new FarmService()
   private sensorService: SensorService = new SensorService()
   private deviceService: DeviceService = new DeviceService()
   private alarmService: AlarmService = AlarmService.getInstance()
@@ -56,12 +56,12 @@ struct Index {
 
   async aboutToAppear() {
     this.isSimulationMode = this.appConfig.simulationMode
-    await this.loadFields()
+    await this.loadFarms()
     await this.loadWeather()
     
     // 定时刷新
     this.refreshInterval = setInterval(() => {
-      this.loadFields()
+      this.loadFarms()
     }, 10000)
   }
 
@@ -71,21 +71,21 @@ struct Index {
     }
   }
 
-  async loadFields() {
+  async loadFarms() {
     try {
-      const fieldList = await this.fieldService.getFieldList(true)
+      const farmList = await this.farmService.getFarmList(true)
       
       // 获取统计
       const devices = await this.deviceService.getDeviceList()
       this.totalDevices = devices.length
       this.totalAlarms = await this.alarmService.getUnprocessedCount()
       
-      // 获取每个地块的最新环境数据
-      const fieldsWithEnv: FieldWithEnv[] = []
+      // 获取每个农场的最新环境数据
+      const farmsWithEnv: FarmWithEnv[] = []
       let totalPoints = 0
       
-      for (const field of fieldList) {
-        const detail = await this.fieldService.getFieldDetail(field.id!)
+      for (const farm of farmList) {
+        const detail = await this.farmService.getFarmDetail(farm.id!)
         const points = detail?.points || []
         totalPoints += points.length
         
@@ -95,28 +95,28 @@ struct Index {
           envData = await this.sensorService.getEnvironmentData(points[0].id!)
         }
         
-        const fieldWithEnv = new FieldWithEnv()
-        fieldWithEnv.id = field.id!
-        fieldWithEnv.fieldId = field.fieldId || ''
-        fieldWithEnv.fieldName = field.fieldName || ''
-        fieldWithEnv.fieldType = field.fieldType || 'outdoor'
-        fieldWithEnv.location = field.location || ''
-        fieldWithEnv.area = field.area || 0
-        fieldWithEnv.cropType = field.cropType || ''
-        fieldWithEnv.status = field.status || 1
-        fieldWithEnv.envData = envData
-        fieldWithEnv.pointCount = points.length
-        fieldWithEnv.deviceCount = 0
-        fieldWithEnv.alarmCount = 0
+        const farmWithEnv = new FarmWithEnv()
+        farmWithEnv.id = farm.id!
+        farmWithEnv.farmId = farm.farmId || ''
+        farmWithEnv.farmName = farm.farmName || ''
+        farmWithEnv.farmType = farm.farmType || 'outdoor'
+        farmWithEnv.location = farm.location || ''
+        farmWithEnv.area = farm.area || 0
+        farmWithEnv.cropType = farm.cropType || ''
+        farmWithEnv.status = farm.status || 1
+        farmWithEnv.envData = envData
+        farmWithEnv.pointCount = points.length
+        farmWithEnv.deviceCount = 0
+        farmWithEnv.alarmCount = 0
         
-        fieldsWithEnv.push(fieldWithEnv)
+        farmsWithEnv.push(farmWithEnv)
       }
       
-      this.fields = fieldsWithEnv
-      this.totalFields = fieldList.length
+      this.farms = farmsWithEnv
+      this.totalFarms = farmList.length
       this.totalPoints = totalPoints
     } catch (error) {
-      console.error('加载地块列表失败:', error)
+      console.error('加载农场列表失败:', error)
     } finally {
       this.isLoading = false
     }
@@ -232,8 +232,8 @@ struct Index {
             // 今日概览
             this.OverviewSection()
 
-            // 地块列表
-            this.FieldListSection()
+            // 农场列表
+            this.FarmListSection()
           }
           .width('100%')
           .padding({ left: 16, right: 16, top: 16, bottom: 16 })
@@ -260,7 +260,7 @@ struct Index {
         .width('100%')
 
       Row() {
-        this.OverviewItem('🌾', '地块', this.totalFields, '#4CAF50')
+        this.OverviewItem('🌾', '农场', this.totalFarms, '#4CAF50')
         this.OverviewItem('📍', '检测点', this.totalPoints, '#2196F3')
         this.OverviewItem('🔔', '报警', this.totalAlarms, '#F44336')
         this.OverviewItem('🔧', '设备', this.totalDevices, '#FF9800')
@@ -296,23 +296,23 @@ struct Index {
   }
 
   @Builder
-  FieldListSection() {
+  FarmListSection() {
     Column() {
-      Text('🌾 我的地块')
+      Text('🌾 我的农场')
         .fontSize(16)
         .fontWeight(FontWeight.Medium)
         .fontColor('#333333')
         .width('100%')
 
-      if (this.fields.length === 0) {
+      if (this.farms.length === 0) {
         Column() {
           Text('🌱')
             .fontSize(48)
-          Text('暂无地块数据')
+          Text('暂无农场数据')
             .fontSize(16)
             .fontColor('#999999')
             .margin({ top: 12 })
-          Text('请在管理后台添加地块')
+          Text('请在管理后台添加农场')
             .fontSize(14)
             .fontColor('#CCCCCC')
             .margin({ top: 8 })
@@ -320,8 +320,8 @@ struct Index {
         .width('100%')
         .padding(40)
       } else {
-        ForEach(this.fields, (field: FieldWithEnv) => {
-          this.FieldCard(field)
+        ForEach(this.farms, (farm: FarmWithEnv) => {
+          this.FarmCard(farm)
         })
       }
     }
@@ -330,27 +330,27 @@ struct Index {
   }
 
   @Builder
-  FieldCard(field: FieldWithEnv) {
+  FarmCard(farm: FarmWithEnv) {
     Column() {
       // 卡片头部
       Row() {
-        // 地块图标
-        Text(this.getFieldIcon(field.fieldType))
+        // 农场图标
+        Text(this.getFarmIcon(farm.farmType))
           .fontSize(32)
 
         Column() {
-          Text(field.fieldName)
+          Text(farm.farmName)
             .fontSize(18)
             .fontWeight(FontWeight.Bold)
             .fontColor('#333333')
 
           Row() {
-            Text(FieldTypeNames[field.fieldType] || '户外田地')
+            Text(FarmTypeNames[farm.farmType] || '户外田地')
               .fontSize(12)
               .fontColor('#999999')
 
-            if (field.area > 0) {
-              Text(` · ${field.area}亩`)
+            if (farm.area > 0) {
+              Text(` · ${farm.area}亩`)
                 .fontSize(12)
                 .fontColor('#999999')
             }
@@ -363,17 +363,17 @@ struct Index {
         Blank()
 
         // 状态指示
-        this.StatusBadge(field)
+        this.StatusBadge(farm)
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 16, bottom: 8 })
 
       // 作物信息
-      if (field.cropType) {
+      if (farm.cropType) {
         Row() {
           Text('🌾')
             .fontSize(14)
-          Text(`种植: ${field.cropType}`)
+          Text(`种植: ${farm.cropType}`)
             .fontSize(13)
             .fontColor('#666666')
             .margin({ left: 4 })
@@ -383,8 +383,8 @@ struct Index {
       }
 
       // 环境数据概览
-      if (field.envData) {
-        this.EnvDataSection(field.envData)
+      if (farm.envData) {
+        this.EnvDataSection(farm.envData)
       }
 
       // 检测点信息和进入按钮
@@ -392,7 +392,7 @@ struct Index {
         Row() {
           Text('📍')
             .fontSize(12)
-          Text(`${field.pointCount} 个检测点`)
+          Text(`${farm.pointCount} 个检测点`)
             .fontSize(12)
             .fontColor('#999999')
             .margin({ left: 4 })
@@ -412,7 +412,7 @@ struct Index {
         .padding({ left: 12, right: 12, top: 6, bottom: 6 })
         .backgroundColor('#E8F5E9')
         .borderRadius(16)
-        .onClick(() => this.navigateToFieldDetail(field))
+        .onClick(() => this.navigateToFarmDetail(farm))
       }
       .width('100%')
       .padding({ left: 16, right: 16, top: 8, bottom: 16 })
@@ -518,39 +518,39 @@ struct Index {
   }
 
   @Builder
-  StatusBadge(field: FieldWithEnv) {
+  StatusBadge(farm: FarmWithEnv) {
     Row() {
       Circle()
         .width(6)
         .height(6)
-        .fill(this.getStatusColor(field))
+        .fill(this.getStatusColor(farm))
         .margin({ right: 4 })
 
-      Text(this.getStatusText(field))
+      Text(this.getStatusText(farm))
         .fontSize(12)
-        .fontColor(this.getStatusColor(field))
+        .fontColor(this.getStatusColor(farm))
     }
     .padding({ left: 8, right: 8, top: 4, bottom: 4 })
-    .backgroundColor(this.getStatusColor(field) + '20')
+    .backgroundColor(this.getStatusColor(farm) + '20')
     .borderRadius(12)
   }
 
-  private getStatusText(field: FieldWithEnv): string {
-    if (field.envData) {
-      if (field.envData.temperature > 35 || field.envData.temperature < 10) {
+  private getStatusText(farm: FarmWithEnv): string {
+    if (farm.envData) {
+      if (farm.envData.temperature > 35 || farm.envData.temperature < 10) {
         return '异常'
-      } else if (field.envData.soilMoisture < 30) {
+      } else if (farm.envData.soilMoisture < 30) {
         return '需灌溉'
       }
     }
     return '正常'
   }
 
-  private getStatusColor(field: FieldWithEnv): ResourceColor {
-    if (field.envData) {
-      if (field.envData.temperature > 35 || field.envData.temperature < 10) {
+  private getStatusColor(farm: FarmWithEnv): ResourceColor {
+    if (farm.envData) {
+      if (farm.envData.temperature > 35 || farm.envData.temperature < 10) {
         return '#F44336'
-      } else if (field.envData.soilMoisture < 30) {
+      } else if (farm.envData.soilMoisture < 30) {
         return '#FF9800'
       }
     }
@@ -588,32 +588,32 @@ struct Index {
     .width('25%')
   }
 
-  // 导航到地块详情页
-  private navigateToFieldDetail(field: FieldWithEnv) {
+  // 导航到农场详情页
+  private navigateToFarmDetail(farm: FarmWithEnv) {
     // 保存到全局状态
-    this.appState.setCurrentField({
-      id: field.id,
-      fieldId: field.fieldId,
-      fieldName: field.fieldName,
-      fieldType: field.fieldType,
-      location: field.location,
-      area: field.area,
-      cropType: field.cropType,
-      status: field.status
-    })
+    let farmObj = new Farm()
+    farmObj.id = farm.id
+    farmObj.farmId = farm.farmId
+    farmObj.farmName = farm.farmName
+    farmObj.farmType = farm.farmType
+    farmObj.location = farm.location
+    farmObj.area = farm.area
+    farmObj.cropType = farm.cropType
+    farmObj.status = farm.status
+    this.appState.setCurrentFarm(farmObj)
 
     router.pushUrl({
       url: 'pages/FieldDetailPage',
       params: {
-        fieldId: field.id,
-        fieldName: field.fieldName
+        farmId: farm.id,
+        farmName: farm.farmName
       }
     }).catch((error: Error) => {
       console.error('页面跳转失败:', error)
     })
   }
 
-  private getFieldIcon(type: string): string {
+  private getFarmIcon(type: string): string {
     switch (type) {
       case 'greenhouse':
         return '🏠'

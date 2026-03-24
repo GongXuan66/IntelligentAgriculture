@@ -1,5 +1,6 @@
 import { HttpClient } from '../web/HttpClient'
 import { EnvironmentData } from '../models/EnvironmentData'
+import { IrrigationThresholdConfig } from '../models/Irrigation'
 
 interface ApiResponse<T> {
   code: number
@@ -25,18 +26,18 @@ export interface MoisturePrediction {
  * 灌溉策略（基于作物生长阶段）
  */
 export interface IrrigationStrategy {
-  cropType: string
-  cropName: string
-  currentStage: string
-  daysSincePlanting: number
-  minHumidity: number
-  maxHumidity: number
-  optimalHumidity: number
-  irrigationFactor: number
-  frequencyHint: string
-  waterNeeds: string
-  specialNotes: string
-  hasCropConfig: boolean
+  cropCode?: string
+  cropName?: string
+  currentStage?: string
+  daysSincePlanting?: number
+  minHumidity?: number
+  maxHumidity?: number
+  optimalHumidity?: number
+  irrigationFactor?: number
+  frequencyHint?: string
+  waterNeeds?: string
+  specialNotes?: string
+  hasCropConfig?: boolean
 }
 
 /**
@@ -91,8 +92,77 @@ export interface SetCropRequest {
 }
 
 /**
+ * 多目标优化结果
+ */
+export interface OptimizationResult {
+  waterAmount: number           // 推荐用水量(L)
+  durationSeconds: number       // 灌溉时长(秒)
+  estimatedMoistureGain: number // 预计湿度提升
+  predictedMoisture: number     // 预测灌溉后湿度
+  cost: number                  // 预估成本
+  healthScore: number           // 作物健康得分
+  totalScore: number            // 综合得分
+  paretoRank: number            // 帕累托等级
+}
+
+/**
+ * 优化算法信息
+ */
+export interface OptimizationInfo {
+  name: string
+  description: string
+  objectives: { [key: string]: string }
+  parameters: { [key: string]: number }
+}
+
+/**
+ * LSTM模型信息
+ */
+export interface LSTMModelInfo {
+  mode: string
+  modelLoaded: boolean
+  modelPath: string
+  seqLength: number
+  featureSize: number
+  predictHours: number[]
+}
+
+/**
+ * 算法对比结果
+ */
+export interface AlgorithmCompare {
+  ewma: {
+    name: string
+    description: string
+    status: string
+  }
+  multiObjective: {
+    name: string
+    description: string
+    status: string
+    result?: OptimizationResult
+  }
+  lstm: {
+    name: string
+    description: string
+    modelLoaded: boolean
+    status: string
+  }
+}
+
+/**
+ * 智能灌溉统计
+ */
+export interface SmartIrrigationStats {
+  learningProgress: LearningProgress
+  cropStrategy: IrrigationStrategy
+  recentDecisions: IrrigationThresholdConfig[]
+}
+
+/**
  * 智能灌溉服务
  * 提供预测性灌溉、自适应学习、作物生长阶段感知功能
+ * 支持多目标优化和LSTM深度学习
  */
 export class SmartIrrigationService {
 
@@ -254,7 +324,147 @@ export class SmartIrrigationService {
     }
   }
 
-  // 默认值
+  // ========== 多目标优化接口 ==========
+
+  /**
+   * 执行多目标优化
+   */
+  async optimizeIrrigation(
+    currentMoisture: number,
+    targetMoisture: number,
+    temperature: number = 25,
+    currentHour: number = 14,
+    cropFactor: number = 1.0
+  ): Promise<{ optimization: OptimizationResult, algorithm: OptimizationInfo }> {
+    try {
+      const result = await HttpClient.get<ApiResponse<{ optimization: OptimizationResult, algorithm: OptimizationInfo }>>(
+        `/api/test/smart-irrigation/optimization?currentMoisture=${currentMoisture}&targetMoisture=${targetMoisture}&temperature=${temperature}&currentHour=${currentHour}&cropFactor=${cropFactor}`
+      )
+      return result.data
+    } catch (error) {
+      console.error('[SmartIrrigationService] 多目标优化失败:', error)
+      return {
+        optimization: this.getDefaultOptimization(),
+        algorithm: this.getDefaultOptimizationInfo()
+      }
+    }
+  }
+
+  /**
+   * 获取优化算法信息
+   */
+  async getOptimizationInfo(): Promise<OptimizationInfo> {
+    try {
+      const result = await HttpClient.get<ApiResponse<OptimizationInfo>>(
+        '/api/test/smart-irrigation/optimization/info'
+      )
+      return result.data
+    } catch (error) {
+      console.error('[SmartIrrigationService] 获取优化信息失败:', error)
+      return this.getDefaultOptimizationInfo()
+    }
+  }
+
+  // ========== LSTM/ONNX 接口 ==========
+
+  /**
+   * 获取LSTM模型信息
+   */
+  async getLSTMModelInfo(pointId: number = 1): Promise<LSTMModelInfo & { predictions?: { [key: string]: number } }> {
+    try {
+      const result = await HttpClient.get<ApiResponse<LSTMModelInfo & { predictions?: { [key: string]: number } }>>(
+        `/api/test/smart-irrigation/lstm?pointId=${pointId}`
+      )
+      return result.data
+    } catch (error) {
+      console.error('[SmartIrrigationService] 获取LSTM信息失败:', error)
+      return {
+        mode: 'ewma',
+        modelLoaded: false,
+        modelPath: '',
+        seqLength: 24,
+        featureSize: 5,
+        predictHours: [2, 4, 6]
+      }
+    }
+  }
+
+  /**
+   * 获取算法对比报告
+   */
+  async compareAlgorithms(
+    currentMoisture: number = 35,
+    targetMoisture: number = 55
+  ): Promise<AlgorithmCompare> {
+    try {
+      const result = await HttpClient.get<ApiResponse<AlgorithmCompare>>(
+        `/api/test/smart-irrigation/compare?currentMoisture=${currentMoisture}&targetMoisture=${targetMoisture}`
+      )
+      return result.data
+    } catch (error) {
+      console.error('[SmartIrrigationService] 算法对比失败:', error)
+      return {
+        ewma: { name: 'EWMA', description: '指数加权移动平均', status: '已实现' },
+        multiObjective: { name: 'NSGA-II', description: '多目标遗传算法', status: '已实现' },
+        lstm: { name: 'LSTM', description: '深度学习预测', modelLoaded: false, status: '待训练' }
+      }
+    }
+  }
+
+  /**
+   * 测试全部算法
+   */
+  async testAllAlgorithms(pointId: number = 1): Promise<{
+    prediction: MoisturePrediction
+    learning: LearningProgress
+    cropStrategy: IrrigationStrategy
+    irrigationPlan: SmartIrrigationPlan
+  }> {
+    try {
+      const result = await HttpClient.get<ApiResponse<{
+        prediction: MoisturePrediction
+        learning: LearningProgress
+        cropStrategy: IrrigationStrategy
+        irrigationPlan: SmartIrrigationPlan
+      }>>(`/api/test/smart-irrigation/all?pointId=${pointId}`)
+      return result.data
+    } catch (error) {
+      console.error('[SmartIrrigationService] 测试全部算法失败:', error)
+      return {
+        prediction: this.getDefaultPrediction(),
+        learning: {},
+        cropStrategy: this.getDefaultStrategy(),
+        irrigationPlan: this.getDefaultPlan()
+      }
+    }
+  }
+
+  /**
+   * 模拟智能灌溉
+   */
+  async simulateIrrigation(pointId: number, soilMoistureBefore: number = 35): Promise<{
+    plan: SmartIrrigationPlan
+    irrigationLog: any
+    simulatedMoistureAfter: number
+    updatedLearning: LearningProgress
+    message: string
+  }> {
+    try {
+      const result = await HttpClient.post<ApiResponse<{
+        plan: SmartIrrigationPlan
+        irrigationLog: any
+        simulatedMoistureAfter: number
+        updatedLearning: LearningProgress
+        message: string
+      }>>(`/api/test/smart-irrigation/simulate?pointId=${pointId}&soilMoistureBefore=${soilMoistureBefore}`, {})
+      return result.data
+    } catch (error) {
+      console.error('[SmartIrrigationService] 模拟灌溉失败:', error)
+      throw error
+    }
+  }
+
+  // ========== 默认值 ==========
 
   private getDefaultPlan(): SmartIrrigationPlan {
     return {
@@ -288,7 +498,7 @@ export class SmartIrrigationService {
 
   private getDefaultStrategy(): IrrigationStrategy {
     return {
-      cropType: '',
+      cropCode: '',
       cropName: '',
       currentStage: '',
       daysSincePlanting: 0,
@@ -300,6 +510,38 @@ export class SmartIrrigationService {
       waterNeeds: '',
       specialNotes: '',
       hasCropConfig: false
+    }
+  }
+
+  private getDefaultOptimization(): OptimizationResult {
+    return {
+      waterAmount: 10,
+      durationSeconds: 20,
+      estimatedMoistureGain: 15,
+      predictedMoisture: 50,
+      cost: 0.1,
+      healthScore: 80,
+      totalScore: 0.75,
+      paretoRank: 0
+    }
+  }
+
+  private getDefaultOptimizationInfo(): OptimizationInfo {
+    return {
+      name: 'NSGA-II 多目标遗传算法',
+      description: '在节水、成本、作物健康间寻找帕累托最优解',
+      objectives: {
+        moistureScore: '湿度达标率',
+        waterScore: '节水量',
+        costScore: '经济成本',
+        healthScore: '作物健康'
+      },
+      parameters: {
+        populationSize: 50,
+        maxGenerations: 100,
+        mutationRate: 0.1,
+        crossoverRate: 0.8
+      }
     }
   }
 }
