@@ -56,12 +56,8 @@ public class MonitorPointController {
      */
     @PostMapping
     public ApiResponse<MonitorPointDTO> createPoint(@Valid @RequestBody MonitorPointDTO.CreateRequest request) {
-        try {
-            MonitorPointDTO point = monitorPointService.createPoint(request);
-            return ApiResponse.success("添加成功", point);
-        } catch (RuntimeException e) {
-            return ApiResponse.error(e.getMessage());
-        }
+        MonitorPointDTO point = monitorPointService.createPoint(request);
+        return ApiResponse.success("添加成功", point);
     }
 
     /**
@@ -71,12 +67,8 @@ public class MonitorPointController {
     public ApiResponse<MonitorPointDTO> updatePoint(
             @PathVariable Long id,
             @RequestBody MonitorPointDTO.UpdateRequest request) {
-        try {
-            MonitorPointDTO point = monitorPointService.updatePoint(id, request);
-            return ApiResponse.success("更新成功", point);
-        } catch (RuntimeException e) {
-            return ApiResponse.error(e.getMessage());
-        }
+        MonitorPointDTO point = monitorPointService.updatePoint(id, request);
+        return ApiResponse.success("更新成功", point);
     }
 
     /**

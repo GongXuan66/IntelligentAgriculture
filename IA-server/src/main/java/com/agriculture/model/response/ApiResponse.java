@@ -1,20 +1,27 @@
 package com.agriculture.model.response;
 
-import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 
-/**
- * 统一响应结果
- */
+import java.time.LocalDateTime;
+
 @Data
-@NoArgsConstructor
-@AllArgsConstructor
 public class ApiResponse<T> {
 
     private Integer code;
     private String message;
     private T data;
+    private LocalDateTime timestamp;
+
+    public ApiResponse() {
+        this.timestamp = LocalDateTime.now();
+    }
+
+    public ApiResponse(Integer code, String message, T data) {
+        this.code = code;
+        this.message = message;
+        this.data = data;
+        this.timestamp = LocalDateTime.now();
+    }
 
     public static <T> ApiResponse<T> success(T data) {
         return new ApiResponse<>(200, "success", data);

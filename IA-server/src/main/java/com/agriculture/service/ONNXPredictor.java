@@ -1,5 +1,6 @@
 package com.agriculture.service;
 
+import com.agriculture.common.exception.BusinessException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -78,7 +79,7 @@ public class ONNXPredictor {
             }
 
             if (!modelFile.exists()) {
-                throw new RuntimeException("ONNX模型文件不存在: " + modelPath);
+                throw new BusinessException("ONNX模型文件不存在: " + modelPath);
             }
 
             // 使用反射加载ONNX Runtime，避免强制依赖
@@ -97,9 +98,9 @@ public class ONNXPredictor {
             log.info("ONNX模型加载成功: {}", modelFile.getAbsolutePath());
 
         } catch (ClassNotFoundException e) {
-            throw new RuntimeException("ONNX Runtime未安装，请添加依赖: onnxruntime");
+            throw new BusinessException("ONNX Runtime未安装，请添加依赖: onnxruntime");
         } catch (Exception e) {
-            throw new RuntimeException("加载ONNX模型失败: " + e.getMessage(), e);
+            throw new BusinessException(500, "加载ONNX模型失败: " + e.getMessage(), e);
         }
     }
 

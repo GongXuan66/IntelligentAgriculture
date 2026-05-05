@@ -1,8 +1,6 @@
 package com.agriculture.ai;
 
-import com.agriculture.entity.AiInteraction;
-import com.agriculture.service.ChatHistoryService;
-import dev.langchain4j.store.memory.chat.ChatMemoryStore;
+import com.agriculture.ai.client.IaAiClient;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -26,9 +24,7 @@ import java.util.Map;
 @Tag(name = "AI助手", description = "智慧农业AI对话接口")
 public class AiTestController {
 
-    private final Assistant assistant;
-    private final ChatMemoryStore chatMemoryStore;
-    private final ChatHistoryService chatHistoryService;
+    private final IaAiClient iaAiClient;
 
     /**
      * 同步对话（POST，供前端调用）
@@ -42,24 +38,17 @@ public class AiTestController {
         String message = request.getOrDefault("message", "你好");
         String context = request.getOrDefault("context", "");
 
-        // 如果有上下文信息，附加到消息中
-        String fullMessage = context.isEmpty() ? message : context + "\n\n用户问题：" + message;
-
-        String reply;
-        if (sessionId != null && !sessionId.isBlank()) {
-            // 带记忆的对话
-            chatHistoryService.saveUserMessage(sessionId, message);
-            reply = assistant.chatSync(sessionId, fullMessage);
-            chatHistoryService.saveAssistantMessage(sessionId, reply);
-        } else {
-            // 无记忆的一次性对话
-            sessionId = "session_" + System.currentTimeMillis();
-            reply = assistant.chatSync(sessionId, fullMessage);
+        String normalizedSessionId = sessionId;
+        if (normalizedSessionId == null || normalizedSessionId.isBlank()) {
+            normalizedSessionId = "session_" + System.currentTimeMillis();
         }
 
+        String fullMessage = buildFullMessage(message, context);
+        IaAiClient.ChatSyncResult result = iaAiClient.chatSync(normalizedSessionId, fullMessage);
+
         Map<String, Object> data = new HashMap<>();
-        data.put("reply", reply);
-        data.put("sessionId", sessionId);
+        data.put("reply", result.reply());
+        data.put("sessionId", result.sessionId());
 
         Map<String, Object> response = new HashMap<>();
         response.put("code", 200);
@@ -67,6 +56,13 @@ public class AiTestController {
         response.put("data", data);
 
         return ResponseEntity.ok(response);
+    }
+
+    private String buildFullMessage(String message, String context) {
+        if (context == null || context.isBlank()) {
+            return message;
+        }
+        return "【当前环境数据】\n" + context + "\n\n【用户问题】\n" + message;
     }
 
     /**
@@ -83,29 +79,7 @@ public class AiTestController {
             @Parameter(description = "会话ID，传入则启用记忆") 
             @RequestParam(value = "sessionId", required = false) String sessionId) {
         
-        if (sessionId != null && !sessionId.isBlank()) {
-            // 带记忆的对话：保存用户消息，收集助手响应后保存
-            chatHistoryService.saveUserMessage(sessionId, message);
-            return collectAndSaveResponse(sessionId, assistant.chat(sessionId, message));
-        } else {
-            // 无记忆的一次性对话
-            return assistant.chat(message);
-        }
-    }
-
-    /**
-     * 收集流式响应并保存到历史记录
-     */
-    private Flux<String> collectAndSaveResponse(String sessionId, Flux<String> responseFlux) {
-        StringBuilder fullResponse = new StringBuilder();
-        return responseFlux
-                .doOnNext(fullResponse::append)
-                .doOnComplete(() -> {
-                    // 流完成后保存助手消息
-                    if (!fullResponse.isEmpty()) {
-                        chatHistoryService.saveAssistantMessage(sessionId, fullResponse.toString());
-                    }
-                });
+        return Flux.just("data: {\"error\":\"IA-AI 暂不支持后端转发流式对话\"}\n\n");
     }
 
     /**
@@ -113,10 +87,14 @@ public class AiTestController {
      */
     @Operation(summary = "获取对话历史", description = "获取指定会话的完整对话记录")
     @GetMapping("/history")
-    public List<AiInteraction> getHistory(
-            @Parameter(description = "会话ID") 
+    public ResponseEntity<Map<String, Object>> getHistory(
+            @Parameter(description = "会话ID")
             @RequestParam("sessionId") String sessionId) {
-        return chatHistoryService.getHistoryBySessionId(sessionId);
+        Map<String, Object> response = new HashMap<>();
+        response.put("code", 501);
+        response.put("message", "对话历史已由 IA-AI 维护");
+        response.put("data", List.of());
+        return ResponseEntity.status(501).body(response);
     }
 
     /**
@@ -127,12 +105,9 @@ public class AiTestController {
     @Operation(summary = "清除记忆", description = "清除指定会话的对话历史")
     @DeleteMapping("/memory")
     public String clearMemory(
-            @Parameter(description = "会话ID") 
+            @Parameter(description = "会话ID")
             @RequestParam("sessionId") String sessionId) {
-        // 清除 Redis 记忆
-        chatMemoryStore.deleteMessages(sessionId);
-        // 清除数据库历史
-        chatHistoryService.deleteBySessionId(sessionId);
-        return "已清除会话 [" + sessionId + "] 的记忆和历史";
+        iaAiClient.clearSession(sessionId);
+        return "已清除会话 [" + sessionId + "] 的记忆";
     }
 }

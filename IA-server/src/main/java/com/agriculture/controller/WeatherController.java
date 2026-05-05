@@ -34,12 +34,7 @@ public class WeatherController {
             @RequestParam Double latitude,
             @Parameter(description = "经度", required = true) 
             @RequestParam Double longitude) {
-        try {
-            WeatherDTO weather = weatherService.getWeatherByLocation(latitude, longitude);
-            return ApiResponse.success(weather);
-        } catch (RuntimeException e) {
-            log.error("获取天气失败", e);
-            return ApiResponse.error(e.getMessage());
-        }
+        WeatherDTO weather = weatherService.getWeatherByLocation(latitude, longitude);
+        return ApiResponse.success(weather);
     }
 }

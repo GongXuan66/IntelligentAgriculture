@@ -1,5 +1,9 @@
 package com.agriculture.config;
 
+import com.agriculture.common.exception.BusinessException;
+import com.agriculture.common.exception.DuplicateResourceException;
+import com.agriculture.common.exception.InvalidOperationException;
+import com.agriculture.common.exception.ResourceNotFoundException;
 import com.agriculture.model.response.ApiResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -11,16 +15,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.stream.Collectors;
 
-/**
- * 全局异常处理
- */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    /**
-     * 参数校验异常
-     */
     @ExceptionHandler(MethodArgumentNotValidException.class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     public ApiResponse<Void> handleValidationException(MethodArgumentNotValidException e) {
@@ -31,9 +29,34 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(400, message);
     }
 
-    /**
-     * 运行时异常
-     */
+    @ExceptionHandler(ResourceNotFoundException.class)
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    public ApiResponse<Void> handleResourceNotFoundException(ResourceNotFoundException e) {
+        log.warn("资源未找到: {}", e.getMessage());
+        return ApiResponse.error(e.getErrorCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(BusinessException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleBusinessException(BusinessException e) {
+        log.warn("业务异常: {}", e.getMessage());
+        return ApiResponse.error(e.getErrorCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(InvalidOperationException.class)
+    @ResponseStatus(HttpStatus.BAD_REQUEST)
+    public ApiResponse<Void> handleInvalidOperationException(InvalidOperationException e) {
+        log.warn("无效操作: {}", e.getMessage());
+        return ApiResponse.error(e.getErrorCode(), e.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateResourceException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public ApiResponse<Void> handleDuplicateResourceException(DuplicateResourceException e) {
+        log.warn("资源重复: {}", e.getMessage());
+        return ApiResponse.error(e.getErrorCode(), e.getMessage());
+    }
+
     @ExceptionHandler(RuntimeException.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponse<Void> handleRuntimeException(RuntimeException e) {
@@ -41,9 +64,6 @@ public class GlobalExceptionHandler {
         return ApiResponse.error(e.getMessage());
     }
 
-    /**
-     * 其他异常
-     */
     @ExceptionHandler(Exception.class)
     @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
     public ApiResponse<Void> handleException(Exception e) {

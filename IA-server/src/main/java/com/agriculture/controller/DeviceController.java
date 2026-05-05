@@ -65,12 +65,8 @@ public class DeviceController {
      */
     @PostMapping("/control")
     public ApiResponse<DeviceDTO> controlDevice(@Valid @RequestBody DeviceDTO.ControlRequest request) {
-        try {
-            DeviceDTO device = deviceService.controlDevice(request.getDeviceCode(), request.getCommand());
-            return ApiResponse.success("控制成功", device);
-        } catch (RuntimeException e) {
-            return ApiResponse.error(e.getMessage());
-        }
+        DeviceDTO device = deviceService.controlDevice(request.getDeviceCode(), request.getCommand());
+        return ApiResponse.success("控制成功", device);
     }
 
     /**
@@ -78,12 +74,8 @@ public class DeviceController {
      */
     @PostMapping
     public ApiResponse<DeviceDTO> createDevice(@Valid @RequestBody DeviceDTO.CreateRequest request) {
-        try {
-            DeviceDTO device = deviceService.createDevice(request);
-            return ApiResponse.success("添加成功", device);
-        } catch (RuntimeException e) {
-            return ApiResponse.error(e.getMessage());
-        }
+        DeviceDTO device = deviceService.createDevice(request);
+        return ApiResponse.success("添加成功", device);
     }
 
     /**

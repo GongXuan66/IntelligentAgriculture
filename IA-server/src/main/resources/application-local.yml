@@ -1,5 +1,5 @@
 server:
-  port: 8123
+  port: ${SERVER_PORT:8123}
   servlet:
     context-path: /api
 
@@ -8,7 +8,7 @@ spring:
     name: intelligent-agriculture-server
 
   datasource:
-    url: jdbc:mysql://localhost:3306/agriculture?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8
+    url: ${DB_URL:jdbc:mysql://localhost:3306/agriculture?useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&characterEncoding=utf8}
     username: root
     password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
@@ -27,12 +27,12 @@ spring:
       write-dates-as-timestamps: false
   data:
     redis:
-      database: 0
-      host: 127.0.0.1
-      port: 6379
+      database: ${REDIS_DATABASE:0}
+      host: ${REDIS_HOST:127.0.0.1}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
       timeout: 5000
 
-# MyBatis-Plus 配置
 mybatis-plus:
   mapper-locations: classpath*:mapper/**/*.xml
   type-aliases-package: com.agriculture.entity
@@ -57,7 +57,6 @@ knife4j:
         - com.agriculture.controller
         - com.agriculture.ai
 
-# 日志配置
 logging:
   level:
     com.agriculture: DEBUG
@@ -71,18 +70,17 @@ cache:
     redis:
       ttl-seconds: 120
 
-
-
 langchain4j:
   open-ai:
     streaming-chat-model:
-      api-key: ms-e374a291-3fd1-4312-8bbf-0776d4fdcdfa
-      base-url: https://api-inference.modelscope.cn/v1
-      model-name: moonshotai/Kimi-K2.5
+      api-key: ${AI_API_KEY:}
+      base-url: ${AI_BASE_URL:https://api-inference.modelscope.cn/v1}
+      model-name: ${AI_MODEL_NAME:moonshotai/Kimi-K2.5}
 
-# 和风天气API配置
-# 免费申请: https://dev.qweather.com/
+iaai:
+  base-url: ${IAAI_BASE_URL:http://localhost:8000}
+
 weather:
   qweather:
-    api-key: "d435cbc050e2435fa3ed643eb95c0470"        # 请在此填入您的和风天气API Key
-    api-host: m66r6yk5c4.re.qweatherapi.com # 免费订阅域名，付费用户使用 api.qweather.com
+    api-key: ${WEATHER_API_KEY:}
+    api-host: ${WEATHER_API_HOST:m66r6yk5c4.re.qweatherapi.com}

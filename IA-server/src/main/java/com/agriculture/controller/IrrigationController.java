@@ -90,12 +90,8 @@ public class IrrigationController {
      */
     @PostMapping("/start")
     public ApiResponse<IrrigationDTO> startIrrigation(@Valid @RequestBody IrrigationDTO.StartRequest request) {
-        try {
-            IrrigationDTO log = irrigationService.startIrrigation(request);
-            return ApiResponse.success("开始灌溉", log);
-        } catch (RuntimeException e) {
-            return ApiResponse.error(e.getMessage());
-        }
+        IrrigationDTO log = irrigationService.startIrrigation(request);
+        return ApiResponse.success("开始灌溉", log);
     }
 
     /**
@@ -103,12 +99,8 @@ public class IrrigationController {
      */
     @PostMapping("/stop")
     public ApiResponse<IrrigationDTO> stopIrrigation(@Valid @RequestBody IrrigationDTO.StopRequest request) {
-        try {
-            IrrigationDTO log = irrigationService.stopIrrigation(request.getLogId());
-            return ApiResponse.success("停止灌溉", log);
-        } catch (RuntimeException e) {
-            return ApiResponse.error(e.getMessage());
-        }
+        IrrigationDTO log = irrigationService.stopIrrigation(request.getLogId());
+        return ApiResponse.success("停止灌溉", log);
     }
 
     /**

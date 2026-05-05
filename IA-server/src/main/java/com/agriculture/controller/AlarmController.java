@@ -86,13 +86,9 @@ public class AlarmController {
     public ApiResponse<AlarmDTO> handleAlarm(
             @PathVariable Long id,
             @RequestBody(required = false) AlarmDTO.HandleRequest request) {
-        try {
-            String remark = request != null ? request.getRemark() : null;
-            AlarmDTO alarm = alarmService.handleAlarm(id, remark);
-            return ApiResponse.success("处理成功", alarm);
-        } catch (RuntimeException e) {
-            return ApiResponse.error(e.getMessage());
-        }
+        String remark = request != null ? request.getRemark() : null;
+        AlarmDTO alarm = alarmService.handleAlarm(id, remark);
+        return ApiResponse.success("处理成功", alarm);
     }
 
     /**

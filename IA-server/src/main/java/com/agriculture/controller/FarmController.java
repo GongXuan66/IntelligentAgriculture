@@ -66,12 +66,8 @@ public class FarmController {
      */
     @PostMapping
     public ApiResponse<FarmDTO> createFarm(@Valid @RequestBody FarmDTO.CreateRequest request) {
-        try {
-            FarmDTO farm = farmService.createFarm(request);
-            return ApiResponse.success("添加成功", farm);
-        } catch (RuntimeException e) {
-            return ApiResponse.error(e.getMessage());
-        }
+        FarmDTO farm = farmService.createFarm(request);
+        return ApiResponse.success("添加成功", farm);
     }
 
     /**
@@ -81,12 +77,8 @@ public class FarmController {
     public ApiResponse<FarmDTO> updateFarm(
             @PathVariable Long id,
             @RequestBody FarmDTO.UpdateRequest request) {
-        try {
-            FarmDTO farm = farmService.updateFarm(id, request);
-            return ApiResponse.success("更新成功", farm);
-        } catch (RuntimeException e) {
-            return ApiResponse.error(e.getMessage());
-        }
+        FarmDTO farm = farmService.updateFarm(id, request);
+        return ApiResponse.success("更新成功", farm);
     }
 
     /**
@@ -94,11 +86,7 @@ public class FarmController {
      */
     @DeleteMapping("/{id}")
     public ApiResponse<Void> deleteFarm(@PathVariable Long id) {
-        try {
-            farmService.deleteFarm(id);
-            return ApiResponse.success("删除成功", null);
-        } catch (RuntimeException e) {
-            return ApiResponse.error(e.getMessage());
-        }
+        farmService.deleteFarm(id);
+        return ApiResponse.success("删除成功", null);
     }
 }
