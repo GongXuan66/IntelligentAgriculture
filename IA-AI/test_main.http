@@ -1,0 +1,61 @@
+# Test your FastAPI endpoints
+
+GET http://127.0.0.1:8000/
+Accept: application/json
+
+###
+
+GET http://127.0.0.1:8000/health
+Accept: application/json
+
+###
+
+POST http://127.0.0.1:8000/api/chat/clear
+Content-Type: application/json
+
+{
+  "session_id": "demo-session"
+}
+
+###
+
+POST http://127.0.0.1:8000/api/chat/sync
+Content-Type: application/json
+
+{
+  "message": "你好，帮我查看系统状态",
+  "session_id": "demo-session"
+}
+
+###
+
+# 测试触发工具调用：获取所有设备
+POST http://127.0.0.1:8000/api/chat/sync
+Content-Type: application/json
+
+{
+  "message": "列出所有设备",
+  "session_id": "demo-session"
+}
+
+###
+
+# 测试触发工具调用：获取指定检测点的设备
+POST http://127.0.0.1:8000/api/chat/sync
+Content-Type: application/json
+
+{
+  "message": "查看检测点1的所有设备",
+  "session_id": "demo-session"
+}
+
+###
+
+# 测试会话记忆：继续对话
+POST http://127.0.0.1:8000/api/chat/sync
+Content-Type: application/json
+
+{
+  "message": "这些设备中第一个是什么",
+  "session_id": "demo-session"
+}
