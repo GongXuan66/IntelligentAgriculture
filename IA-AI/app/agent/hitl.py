@@ -48,7 +48,7 @@ def _request_approval(tool_name: str, args: dict, summary: str) -> dict:
 
 
 @tool(
-    name="control_device",
+    "control_device",
     description="""
 控制设备开关（高危操作，执行前必须等待用户在界面上确认）。
 
@@ -68,7 +68,7 @@ async def control_device(device_code: str, command: str) -> str:
 
 
 @tool(
-    name="start_irrigation",
+    "start_irrigation",
     description="""
 开始灌溉（高危操作，执行前必须等待用户在界面上确认）。
 
@@ -89,7 +89,7 @@ async def start_irrigation(point_id: int, duration: int = 60, mode: int = 1) -> 
 
 
 @tool(
-    name="stop_irrigation",
+    "stop_irrigation",
     description="""
 停止灌溉（高危操作，执行前必须等待用户在界面上确认）。
 
@@ -108,7 +108,7 @@ async def stop_irrigation(log_id: int) -> str:
 
 
 @tool(
-    name="handle_alarm",
+    "handle_alarm",
     description="""
 处理（确认）报警记录（高危操作，执行前必须等待用户在界面上确认），可选备注。
 
