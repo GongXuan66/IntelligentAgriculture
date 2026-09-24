@@ -42,7 +42,16 @@ class VectorStoreManager:
                 return ModelScopeEmbeddings()
             else:
                 logger.info("使用本地 HuggingFace 进行 embedding")
-                from langchain_community.embeddings import HuggingFaceEmbeddings
+                try:
+                    from langchain_community.embeddings import HuggingFaceEmbeddings
+                except ImportError as e:
+                    raise RuntimeError(
+                        "本地 embedding 需要 sentence-transformers（可选依赖）：\n"
+                        "  uv sync --extra local-embed\n"
+                        "或者在 app/.env 配置 ModelScope Embedding API 免装该依赖：\n"
+                        "  RAG_EMBEDDING_API_KEY=<token>\n"
+                        "  RAG_EMBEDDING_MODEL=BAAI/bge-small-zh-v1.5"
+                    ) from e
                 return HuggingFaceEmbeddings(
                     model_name=settings.rag_embedding_model,
                     model_kwargs={"device": "cpu"},
@@ -61,12 +70,33 @@ class VectorStoreManager:
                     collection_name=self.collection_name,
                     embedding_function=self.embeddings,
                     persist_directory=self.persist_directory,
+                    # bge 系列向量已归一化，应使用余弦距离；
+                    # 默认 L2 距离下 `1 - score` 不是余弦相似度，阈值过滤会失效。
+                    # 注意：该元数据仅在创建 collection 时生效，
+                    # 旧的 L2 索引必须通过 scripts/rebuild_index.py 重建。
+                    collection_metadata={"hnsw:space": "cosine"},
                 )
+                self._check_distance_space()
                 logger.info(f"VectorStore 初始化成功: {self.collection_name}")
             except Exception as e:
                 logger.error(f"VectorStore 初始化失败: {e}")
                 raise
         return self._vectorstore
+
+    def _check_distance_space(self):
+        """检查已有 collection 的距离空间，旧 L2 索引给出重建告警"""
+        try:
+            metadata = self._vectorstore._collection.metadata or {}
+            space = metadata.get("hnsw:space", "l2")
+            if space != "cosine":
+                logger.warning(
+                    f"向量库 '{self.collection_name}' 当前距离空间为 '{space}'，"
+                    "与代码要求的 cosine 不一致（元数据只在创建时生效）。"
+                    "请运行 python scripts/rebuild_index.py 重建索引，"
+                    "否则相似度阈值过滤结果不可靠。"
+                )
+        except Exception as e:
+            logger.debug(f"距离空间检查跳过: {e}")
 
     def add_documents(
         self,

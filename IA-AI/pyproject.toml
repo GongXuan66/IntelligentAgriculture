@@ -20,6 +20,15 @@ dependencies = [
     "python-dotenv>=1.0.0",
     "psycopg2-binary>=2.9.0",
     "asyncpg>=0.29.0",
+    "rank-bm25>=0.2.2",
+    "jieba>=0.42.1",
+]
+
+# 可选依赖：本地 embedding / rerank（间接依赖 torch，体积大）。
+# 开发机不装——embedding 走 ModelScope API（配 RAG_EMBEDDING_API_KEY）；
+# 独显机器上装：uv sync --extra local-embed
+[project.optional-dependencies]
+local-embed = [
     "sentence-transformers>=2.2.0",
 ]
 

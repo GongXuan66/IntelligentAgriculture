@@ -51,7 +51,23 @@ class RAGPipeline:
                 "indexed_chunks": 0,
             }
 
-        chunks = text_splitter.split_documents(docs)
+        # Markdown 文档走"标题层级 + 递归"两阶段切分（标题写入 metadata），
+        # 其他格式走递归切分
+        md_docs = [
+            d for d in docs
+            if str(d.metadata.get("source", "")).lower().endswith((".md", ".markdown"))
+        ]
+        md_ids = {id(d) for d in md_docs}
+        other_docs = [d for d in docs if id(d) not in md_ids]
+
+        chunks = text_splitter.split_documents(md_docs, splitter_type="markdown")
+        chunks += text_splitter.split_documents(other_docs)
+
+        # 过滤无意义短块（空白、残留标点等），避免稀释检索质量
+        chunks = [
+            c for c in chunks
+            if len(c.page_content.strip()) >= rag_settings.min_chunk_length
+        ]
 
         if not chunks:
             return {
@@ -61,9 +77,18 @@ class RAGPipeline:
                 "indexed_chunks": 0,
             }
 
-        for i, chunk in enumerate(chunks):
+        # 为同一来源文档的分块按顺序编号（chunk_index），
+        # 供检索时"同源分块补全"按编号回填相邻块
+        source_counters: Dict[str, int] = {}
+        for chunk in chunks:
             if "source" not in chunk.metadata:
                 chunk.metadata["source"] = "unknown"
+            src = str(chunk.metadata["source"])
+            idx = source_counters.get(src, 0)
+            chunk.metadata["chunk_index"] = idx
+            source_counters[src] = idx + 1
+
+        for i, chunk in enumerate(chunks):
             chunk.metadata["chunk_id"] = f"chunk_{i}"
 
         ids = self.vector_store.add_documents(chunks)
