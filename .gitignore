@@ -60,3 +60,10 @@ venv/
 
 # Specific
 IA-server/server-error.log
+
+# pnpm 实验残留
+/.pnpm-store/
+/.scratch/
+
+# 并行实现归档备份（体积大，仅本地留存）
+web/_archive/
