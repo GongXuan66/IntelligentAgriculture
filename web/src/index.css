@@ -1,0 +1,82 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  background: #f5f7f5;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+}
+
+.chat-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-scroll::-webkit-scrollbar-thumb {
+  background: #c8d6c8;
+  border-radius: 3px;
+}
+
+.typing-cursor::after {
+  content: '▍';
+  margin-left: 2px;
+  color: #52c41a;
+  animation: blink 1s step-start infinite;
+}
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+/* ---------- 对话气泡与执行轨迹 ---------- */
+
+.chat-bubble-user {
+  background: #3f7a3d;
+  color: #fff;
+  border-radius: 12px 12px 2px 12px;
+  padding: 10px 14px;
+  max-width: 80%;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.chat-bubble-assistant {
+  background: #fff;
+  border: 1px solid #edf0e9;
+  border-radius: 12px 12px 12px 2px;
+  padding: 10px 14px;
+  max-width: 86%;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.trace-block {
+  background: #fafafa;
+  border: 1px solid #f0f0f0;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin: 8px 0;
+}
+
+.tool-result-box {
+  margin-top: 4px;
+  padding: 6px 8px;
+  background: #f6ffed;
+  border: 1px solid #d9f7be;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #555;
+  max-height: 180px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
