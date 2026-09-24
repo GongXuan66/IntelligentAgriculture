@@ -16,6 +16,8 @@ class Settings(BaseSettings):
     openai_api_key: str = os.getenv("OPENAI_API_KEY")
     openai_api_url: str = os.getenv("OPENAI_API_URL")
     openai_model: str = os.getenv("OPENAI_MODEL")
+    # 小模型（模型分级路由：简单意图走便宜模型，如 Qwen-Turbo；不配置则全部走主模型）
+    openai_small_model: Optional[str] = os.getenv("OPENAI_SMALL_MODEL")
 
     #java后端配置
     java_backend_url: str = os.getenv("JAVA_BACKEND_URL")

@@ -1,46 +1,46 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Optional
 from app.agent.tool_registry import get_tools_for_domains
+from app.agent.hitl import GATED_WRITE_TOOLS
 
 # 专家系统提示词
 DEVICE_EXPERT_PROMPT = """你是一个智慧农业系统的设备管理专家。
 
-【你的职责】
+【职责】
 - 帮助用户查询设备状态
-- 控制设备开关（如水泵、风机、阀门等）
 - 查看和管理设备列表
 
-【可用工具】
+【可用工具（只读）】
 - get_all_devices: 获取所有设备列表
-- get_devices_by_point_id: 获取指定检测点的设备
+- get_devices_by_point_id: 获取指定监测点的设备
 - get_device_by_device_code: 获取指定设备的实时状态
-- control_device: 控制设备开关（需要设备编码和命令：on/off）
+
+【边界】
+- 设备开关属于高危写操作，由主 Agent 在用户二次确认后执行，本专家不直接控制设备。
 
 【回复要求】
 - 用简洁的中文回复
-- 告诉用户操作结果
-- 如果设备无法操作，说明原因"""
+- 如实呈现设备状态
+- 如果设备查询失败，说明原因"""
 
 IRRIGATION_EXPERT_PROMPT = """你是一个智慧农业系统的灌溉管理专家。
 
-【你的职责】
-- 手动控制灌溉开始和停止
+【职责】
 - 查看灌溉历史记录和统计
-- 管理自动灌溉计划
+- 查询最近一次灌溉与累计水量
 
-【可用工具】
+【可用工具（只读）】
 - get_irrigation_logs: 获取灌溉日志
 - get_latest_irrigation_log: 获取最近一次灌溉记录
 - get_irrigation_total: 获取灌溉统计
-- start_irrigation: 开始灌溉
-- stop_irrigation: 停止灌溉
-- get_auto_irrigation_plan: 获取自动灌溉计划
-- start_auto_irrigation: 启动自动灌溉
+
+【边界】
+- 开始/停止灌溉属于高危写操作，由主 Agent 在用户二次确认后执行，本专家不直接控制灌溉。
 
 【回复要求】
 - 用简洁的中文回复
-- 告诉用户灌溉状态和操作结果
-- 可以根据环境数据建议灌溉时机"""
+- 告诉用户灌溉记录与统计情况
+- 可以根据数据建议灌溉时机，但不代替用户做决定"""
 
 ENVIRONMENT_EXPERT_PROMPT = """你是一个智慧农业系统的环境监测专家。
 
@@ -92,57 +92,42 @@ class ExpertInfo:
     tools: tuple
     system_prompt: str
     keywords: tuple  # 用于路由匹配
+    excluded_tools: tuple = field(default_factory=tuple)  # 需要排除的高危写工具
 
 
 # 专家定义
 EXPERTS: dict[str, ExpertInfo] = {
     "device": ExpertInfo(
         name="设备管理专家",
-        description="负责设备查询和控制",
+        description="负责设备查询（只读）",
         tools=("device",),
         system_prompt=DEVICE_EXPERT_PROMPT,
-        keywords=("设备", "开关", "风机", "水泵", "阀门", "继电器", "控制", "开启", "关闭")
+        keywords=("设备", "开关", "风机", "水泵", "阀门", "继电器", "控制", "开启", "关闭"),
+        excluded_tools=GATED_WRITE_TOOLS,
     ),
     "irrigation": ExpertInfo(
         name="灌溉管理专家",
-        description="负责灌溉控制和日志查看",
+        description="负责灌溉记录查询（只读）",
         tools=("irrigation",),
         system_prompt=IRRIGATION_EXPERT_PROMPT,
-        keywords=("灌溉", "浇水", "水量", "开始灌溉", "停止灌溉", "灌溉日志")
+        keywords=("灌溉", "浇水", "水量", "开始灌溉", "停止灌溉", "灌溉日志"),
+        excluded_tools=GATED_WRITE_TOOLS,
     ),
     "environment": ExpertInfo(
         name="环境监测专家",
         description="负责环境数据查询和分析",
         tools=("environment",),
         system_prompt=ENVIRONMENT_EXPERT_PROMPT,
-        keywords=("环境", "温度", "湿度", "光照", "土壤", "CO2", "天气")
+        keywords=("环境", "温度", "湿度", "光照", "土壤", "CO2", "天气"),
     ),
     "smart_irrigation": ExpertInfo(
         name="智能灌溉专家",
         description="负责智能灌溉预测和作物管理",
         tools=("smart_irrigation",),
         system_prompt=SMART_IRRIGATION_EXPERT_PROMPT,
-        keywords=("预测", "智能", "作物", "学习", "策略", "算法", "统计", "LSTM")
+        keywords=("预测", "智能", "作物", "学习", "策略", "算法", "统计", "LSTM"),
     ),
 }
-
-
-def get_expert_tools() -> list:
-    """获取所有Expert作为Tool（供主Agent使用）"""
-    from langchain_core.tools import tool
-
-    tools = []
-
-    for expert_id, info in EXPERTS.items():
-        @tool(description=f"{info.description}。当你需要{expert_id}相关帮助时调用此工具。")
-        async def call_expert(query: str, expert: str = expert_id) -> str:
-            """调用专家Agent处理请求"""
-            # 这里会被动态替换为实际的Expert Agent调用
-            return f"[Expert: {expert}] 处理中: {query}"
-
-        tools.append(call_expert)
-
-    return tools
 
 
 def get_expert_by_keywords(message: str) -> Optional[ExpertInfo]:
